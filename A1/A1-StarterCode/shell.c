@@ -28,6 +28,9 @@ int main(int argc, char *argv[]) {
 	mem_init();
 
 	while(1) {							
+		if (feof(stdin)) {
+			freopen("/dev/tty","rw",stdin);
+		}
 		printf("%c ",prompt);
 		fgets(userInput, MAX_USER_INPUT-1, stdin);
 
