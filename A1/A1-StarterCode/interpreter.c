@@ -5,8 +5,7 @@
 #include "shellmemory.h"
 #include "shell.h"
 
-int MAX_ARGS_SIZE = 3;
-// test test
+int MAX_ARGS_SIZE = 7; //changed to accomodate 5 tokens in set
 
 int help();
 int quit();
@@ -16,12 +15,14 @@ int print(char* var);
 int run(char* script);
 int my_ls();
 int badcommandFileDoesNotExist();
+int badcommandTooManyTokens();
+int echo(char* value);
 
 // Interpret commands and their arguments
 int interpreter(char* command_args[], int args_size){
 	int i;
 
-	if ( args_size < 1 || args_size > MAX_ARGS_SIZE){
+	if ( args_size < 1 || (args_size > MAX_ARGS_SIZE && strcmp(command_args[0], "set")!=0)){
 		return badcommand();
 	}
 
@@ -42,8 +43,20 @@ int interpreter(char* command_args[], int args_size){
 
 	} else if (strcmp(command_args[0], "set")==0) {
 		//set
-		if (args_size != 3) return badcommand();	
-		return set(command_args[1], command_args[2]);
+		char *full_value;
+		char *space = " ";
+
+		if (args_size < 3) return badcommand();
+		if (args_size > 7) return badcommandTooManyTokens();	//if more than 5 tokens
+		full_value = command_args[2];
+		strcat(full_value, space);
+		for(int i=3; i<args_size; i++){ //concatenate all arguments + spaces in between to new pointer to pass to set
+			strcat(full_value, command_args[i]);
+			if(i!=args_size-1){
+				strcat(full_value, space);
+			}
+		}
+		return set(command_args[1], full_value);
 	
 	} else if (strcmp(command_args[0], "print")==0) {
 		if (args_size != 2) return badcommand();
@@ -53,11 +66,16 @@ int interpreter(char* command_args[], int args_size){
 		if (args_size != 2) return badcommand();
 		return run(command_args[1]);
 	
+
 	} else if (strcmp(command_args[0], "my_ls") == 0) {
 		if (args_size != 1) return badcommand();
 		return my_ls();
 
-	} else return badcommand();
+	} else if(strcmp(command_args[0], "echo")==0){
+		if (args_size != 2) return badcommand();
+		return echo(command_args[1]);
+	}else return badcommand();
+
 }
 
 int help(){
@@ -89,14 +107,19 @@ int badcommandFileDoesNotExist(){
 	return 3;
 }
 
-int set(char* var, char* value){
+// For set command only (more than 5 tokens)
+int badcommandTooManyTokens(){
+	printf("%s\n", "Bad command: Too many tokens");
+	return 1;
+}
 
-	char *link = "=";
-	char buffer[1000];
-	strcpy(buffer, var);
-	strcat(buffer, link);
-	strcat(buffer, value);
-
+int set(char* var, char* value){ 
+	
+	//char *link = "=";
+	//char buffer[1000]; 
+	//strcpy(buffer, var);
+	//strcat(buffer, link);
+	//strcat(buffer, value);
 	mem_set_value(var, value);
 
 	return 0;
@@ -104,6 +127,7 @@ int set(char* var, char* value){
 }
 
 int print(char* var){
+
 	printf("%s\n", mem_get_value(var)); 
 	return 0;
 }
@@ -133,6 +157,23 @@ int run(char* script){
 	return errCode;
 }
 
+
 int my_ls() {
 	return system("ls -1");
+}  
+
+int echo(char *value){
+	char *symbol = "$";
+
+	if(value[0]==*symbol){ //check if argument starts with $
+		if(strcmp(mem_get_value(value+1), "Variable does not exist")==0){
+			printf("\n"); //if variable does not exist
+		}else{
+			print(value+1);
+		}
+	}else{
+		printf("%s\n", value);
+	}
+
+	return 0;
 }
