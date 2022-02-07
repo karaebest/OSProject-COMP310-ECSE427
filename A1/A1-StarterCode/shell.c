@@ -9,6 +9,7 @@
 
 int MAX_USER_INPUT = 1000;
 int parseInput(char ui[]);
+int preprocess(char ui[]);
 
 // Start of everything
 int main(int argc, char *argv[]) {
@@ -28,14 +29,15 @@ int main(int argc, char *argv[]) {
 	mem_init();
 
 	while(1) {							
-		if (feof(stdin)) {
+		if (feof(stdin)) { // if end of file reached, switch input back to keyboard
 			freopen("/dev/tty","rw",stdin);
 		}
 		printf("%c ",prompt);
 		fgets(userInput, MAX_USER_INPUT-1, stdin);
 
-		errorCode = parseInput(userInput);
+		errorCode = preprocess(userInput);	// separate and run same line commands
 		if (errorCode == -1) exit(99);	// ignore all other errors
+
 		memset(userInput, 0, sizeof(userInput));
 
 	}
@@ -68,4 +70,32 @@ int parseInput(char ui[]) {
 	}
 
 	return interpreter(words, w);
+}
+
+// Separate input for multiple commands on the same line, and feed them to parseInput
+int preprocess(char ui[]) {
+	char tmp[200];
+	char** words = malloc(10 * sizeof(char*));
+	int a,b;							
+	int w=0; // wordID
+	int errorCode = 0;					// zero means no error, default
+
+	for(a=0; ui[a]==' ' && a<1000; a++);		// skip white spaces
+
+	while(ui[a] != '\0' && a<1000) {
+
+		for(b=0; ui[a]!='\0' && ui[a]!=';' && a<1000; a++, b++) // Match end of line or semi-colon
+			tmp[b] = ui[a];						// extract a command
+	 
+		tmp[b] = '\0';
+
+		words[w] = strdup(tmp);
+		errorCode = parseInput(words[w]);		// run commands one by one
+		if (errorCode == -1) exit(99);	// ignore all other errors
+
+		a++; 
+		w++;
+	}
+
+	return 0;
 }
