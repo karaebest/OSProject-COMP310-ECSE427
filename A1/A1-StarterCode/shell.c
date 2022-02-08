@@ -31,6 +31,7 @@ int main(int argc, char *argv[]) {
 	while(1) {							
 		if (feof(stdin)) { // if end of file reached, switch input back to keyboard
 			freopen("/dev/tty","rw",stdin);
+
 		}
 		printf("%c ",prompt);
 		fgets(userInput, MAX_USER_INPUT-1, stdin);
@@ -65,8 +66,13 @@ int parseInput(char ui[]) {
 
 		words[w] = strdup(tmp);
 
-		a++; 
 		w++;
+
+		if(ui[a] == '\0') {
+			break;
+		}
+
+		a++; 
 	}
 
 	return interpreter(words, w);
@@ -93,8 +99,13 @@ int preprocess(char ui[]) {
 		errorCode = parseInput(words[w]);		// run commands one by one
 		if (errorCode == -1) exit(99);	// ignore all other errors
 
-		a++; 
 		w++;
+
+		if(ui[a] == '\0') {
+			break;
+		}
+
+		a++; 
 	}
 
 	return 0;
