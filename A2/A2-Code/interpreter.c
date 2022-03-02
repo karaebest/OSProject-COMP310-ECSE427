@@ -12,9 +12,9 @@ int quit();
 int badcommand();
 int badcommandTooManyTokens();
 int badcommandFileDoesNotExist();
-int set(char* var, char* value);
+int set(char* var, char* value, int index);
 int print(char* var);
-int run(char* script);
+int run(char* var, int length);
 int my_ls();
 int echo();
 
@@ -54,7 +54,7 @@ int interpreter(char* command_args[], int args_size){
 				strncat(value, &spaceChar, 1);
 			}
 		}
-		return set(command_args[1], value);
+		return set(command_args[1], value, -1);
 	
 	} else if (strcmp(command_args[0], "print")==0) {
 		if (args_size != 2) return badcommand();
@@ -62,7 +62,43 @@ int interpreter(char* command_args[], int args_size){
 	
 	} else if (strcmp(command_args[0], "run")==0) {
 		if (args_size != 2) return badcommand();
-		return run(command_args[1]);
+		//at most 300 lines w/ 100 chars each
+		//get each line and store in new spot in script
+		//mem_set_val each line, var = script name without .txt
+		//new line in script = new line in mem
+
+		char* script = (char*)calloc(300, 100);
+		char line[100];
+
+		FILE *p = fopen(command_args[1],"rt");
+
+		if(p == NULL){
+			return badcommandFileDoesNotExist();
+		}
+
+		char* ptr = script;
+
+		fgets(line,99,p);
+		int length = 1;
+		int index = set(command_args[1], line, -1) + 1; //set first line of script
+		
+		while(1){
+
+			ptr+=100; //point to next space in script array
+			memset(line, 0, sizeof(line));
+
+			if(feof(p)){
+				break;
+			}
+			fgets(line,99,p);
+			length++;
+			index = set(command_args[1], line, index) + 1;
+		}
+
+		fclose(p);
+		//store info in PCB here
+
+		return run(command_args[1], length); //use location in shell mem as arg
 	
 	} else if (strcmp(command_args[0], "my_ls")==0) {
 		if (args_size > 2) return badcommand();
@@ -107,46 +143,30 @@ int badcommandFileDoesNotExist(){
 	return 3;
 }
 
-int set(char* var, char* value){
+int set(char* var, char* value, int index){
 
-	char *link = "=";
-	char buffer[1000];
-	strcpy(buffer, var);
-	strcat(buffer, link);
-	strcat(buffer, value);
+	// char *link = "=";
+	// char buffer[1000];
+	// strcpy(buffer, var);
+	// strcat(buffer, link);
+	// strcat(buffer, value);
 
-	mem_set_value(var, value);
+	
 
-	return 0;
+	return mem_set_value(var, value, index);
 
 }
 
 int print(char* var){
-	printf("%s\n", mem_get_value(var)); 
+	printf("%s\n", mem_get_value(var, 0)); 
 	return 0;
 }
 
-int run(char* script){
+int run(char* var, int length){ //pass in pointer to script in mem and length of script 
 	int errCode = 0;
-	char line[1000];
-	FILE *p = fopen(script,"rt");  // the program is in a file
-
-	if(p == NULL){
-		return badcommandFileDoesNotExist();
+	for(int i=0; i<length; i++){
+		errCode = parseInput(mem_get_value(var, i));
 	}
-
-	fgets(line,999,p);
-	while(1){
-		errCode = parseInput(line);	// which calls interpreter()
-		memset(line, 0, sizeof(line));
-
-		if(feof(p)){
-			break;
-		}
-		fgets(line,999,p);
-	}
-
-    fclose(p);
 
 	return errCode;
 }
@@ -159,7 +179,7 @@ int my_ls(){
 int echo(char* var){
 	if(var[0] == '$'){
 		var++;
-		printf("%s\n", mem_get_value(var)); 
+		printf("%s\n", mem_get_value(var, 0)); 
 	}else{
 		printf("%s\n", var); 
 	}

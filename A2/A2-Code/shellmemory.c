@@ -22,39 +22,54 @@ void mem_init(){
 }
 
 // Set key value pair
-void mem_set_value(char *var_in, char *value_in) {
-
+int mem_set_value(char *var_in, char *value_in, int index) { //if index != -1, store var + value at index
 	int i;
+	if(index==-1){
+			for (i=0; i<1000; i++){ 
+				if (strcmp(shellmemory[i].var, var_in) == 0){
+					shellmemory[i].value = strdup(value_in);
+					return i;
+				} 
+			}
 
-	for (i=0; i<1000; i++){
-		if (strcmp(shellmemory[i].var, var_in) == 0){
-			shellmemory[i].value = strdup(value_in);
-			return;
+		//Value does not exist, need to find a free spot.
+		for (i=0; i<1000; i++){
+			if (strcmp(shellmemory[i].var, "none") == 0){
+				shellmemory[i].var = strdup(var_in);
+				shellmemory[i].value = strdup(value_in);
+				return i;
+			} 
+		}
+
+		return -1;
+	}else{ //to store next line of script
+		if (strcmp(shellmemory[index].var, var_in) == 0){
+				shellmemory[index].value = strdup(value_in);
+				return index;
 		} 
-	}
+		if (strcmp(shellmemory[index].var, "none") == 0){
+				//shellmemory[index].var = strdup(var_in);
+				shellmemory[index].value = strdup(value_in);
+				return index;
+			}
 
-	//Value does not exist, need to find a free spot.
-	for (i=0; i<1000; i++){
-		if (strcmp(shellmemory[i].var, "none") == 0){
-			shellmemory[i].var = strdup(var_in);
-			shellmemory[i].value = strdup(value_in);
-			return;
-		} 
+		return -1; //-1 if not set (shell mem full)
 	}
-
-	return;
+	
 
 }
 
-//get value based on input key
-char *mem_get_value(char *var_in) {
+//get value based on input key + index difference from key
+char *mem_get_value(char *var_in, int index) { 
+
 	int i;
 
 	for (i=0; i<1000; i++){
+		if(i+index<1000) return "Index out of bounds";
 		if (strcmp(shellmemory[i].var, var_in) == 0){
-			return strdup(shellmemory[i].value);
+			return strdup(shellmemory[i+index].value);
 		} 
 	}
-	return "Variable does not exist";
+	return "Variable does not exist"; 
 
 }
