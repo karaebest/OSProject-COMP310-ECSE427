@@ -43,7 +43,7 @@ int interpreter(char* command_args[], int args_size){
 
 	} else if (strcmp(command_args[0], "set")==0) {
 		//set
-		char *full_value;
+		char *full_value = (char*)calloc(1,150);
 		char *space = " ";
 
 		if (args_size < 3) return badcommand();
