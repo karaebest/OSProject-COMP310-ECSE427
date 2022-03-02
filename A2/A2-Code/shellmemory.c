@@ -21,7 +21,7 @@ void mem_init(){
 	}
 }
 
-// Set key value pair
+// Set key value pair at index (unless index == -1, then stored at next free space)
 int mem_set_value(char *var_in, char *value_in, int index) { //if index != -1, store var + value at index
 	int i;
 	if(index==-1){
@@ -42,7 +42,7 @@ int mem_set_value(char *var_in, char *value_in, int index) { //if index != -1, s
 		}
 
 		return -1;
-	}else{ //to store next line of script
+	}else{ //store value at index, no change to var at that index
 		if (strcmp(shellmemory[index].var, var_in) == 0){
 				shellmemory[index].value = strdup(value_in);
 				return index;
@@ -53,7 +53,7 @@ int mem_set_value(char *var_in, char *value_in, int index) { //if index != -1, s
 				return index;
 			}
 
-		return -1; //-1 if not set (shell mem full)
+		return -1; //if not set (shell mem full)
 	}
 	
 
@@ -65,7 +65,7 @@ char *mem_get_value(char *var_in, int index) {
 	int i;
 
 	for (i=0; i<1000; i++){
-		if(i+index<1000) return "Index out of bounds";
+		if(i+index>1000){return "Index out of bounds";} 
 		if (strcmp(shellmemory[i].var, var_in) == 0){
 			return strdup(shellmemory[i+index].value);
 		} 

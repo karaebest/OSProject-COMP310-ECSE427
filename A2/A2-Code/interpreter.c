@@ -54,7 +54,8 @@ int interpreter(char* command_args[], int args_size){
 				strncat(value, &spaceChar, 1);
 			}
 		}
-		return set(command_args[1], value, -1);
+		set(command_args[1], value, -1);
+		return 0;
 	
 	} else if (strcmp(command_args[0], "print")==0) {
 		if (args_size != 2) return badcommand();
@@ -62,12 +63,7 @@ int interpreter(char* command_args[], int args_size){
 	
 	} else if (strcmp(command_args[0], "run")==0) {
 		if (args_size != 2) return badcommand();
-		//at most 300 lines w/ 100 chars each
-		//get each line and store in new spot in script
-		//mem_set_val each line, var = script name without .txt
-		//new line in script = new line in mem
 
-		char* script = (char*)calloc(300, 100);
 		char line[100];
 
 		FILE *p = fopen(command_args[1],"rt");
@@ -76,15 +72,11 @@ int interpreter(char* command_args[], int args_size){
 			return badcommandFileDoesNotExist();
 		}
 
-		char* ptr = script;
-
 		fgets(line,99,p);
 		int length = 1;
 		int index = set(command_args[1], line, -1) + 1; //set first line of script
 		
 		while(1){
-
-			ptr+=100; //point to next space in script array
 			memset(line, 0, sizeof(line));
 
 			if(feof(p)){
@@ -98,7 +90,7 @@ int interpreter(char* command_args[], int args_size){
 		fclose(p);
 		//store info in PCB here
 
-		return run(command_args[1], length); //use location in shell mem as arg
+		return run(command_args[1], length);
 	
 	} else if (strcmp(command_args[0], "my_ls")==0) {
 		if (args_size > 2) return badcommand();
@@ -154,6 +146,7 @@ int set(char* var, char* value, int index){
 	
 
 	return mem_set_value(var, value, index);
+	//make sure this doesn't mess w/ errCode
 
 }
 
@@ -161,8 +154,8 @@ int print(char* var){
 	printf("%s\n", mem_get_value(var, 0)); 
 	return 0;
 }
-
-int run(char* var, int length){ //pass in pointer to script in mem and length of script 
+//pass in pointer to script in mem and length of script
+int run(char* var, int length){  
 	int errCode = 0;
 	for(int i=0; i<length; i++){
 		errCode = parseInput(mem_get_value(var, i));
