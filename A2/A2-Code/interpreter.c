@@ -15,7 +15,7 @@ int badcommandTooManyTokens();
 int badcommandFileDoesNotExist();
 int set(char* var, char* value, int index);
 int print(char* var);
-void run(char* script);
+int run(char* script);
 int my_ls();
 int echo();
 
@@ -64,8 +64,8 @@ int interpreter(char* command_args[], int args_size){
 	
 	} else if (strcmp(command_args[0], "run")==0) {
 		if (args_size != 2) return badcommand();
-		run(command_args[1]);
-		return 0;
+		
+		return run(command_args[1]);
 	
 	} else if (strcmp(command_args[0], "my_ls")==0) {
 		if (args_size > 2) return badcommand();
@@ -126,7 +126,7 @@ int print(char* var){
 	return 0;
 }
 
-void run(char* script){
+int run(char* script){
 	//check for existing script in shell mem here in next assignment
 	char line[100];
 
@@ -155,7 +155,8 @@ void run(char* script){
 	}
 
 	fclose(p);
-	scheduler(length, start);   
+	scheduler(length, start);
+	return 0;   
 }
 
 int my_ls(){
