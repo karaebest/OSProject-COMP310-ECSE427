@@ -2,7 +2,8 @@
 #include <stdlib.h>
 #include <string.h> 
 
-#include <shellmemory.h>
+#include "shellmemory.h"
+#include "shell.h"
 
 
 typedef struct PCB_struct{
@@ -48,8 +49,9 @@ void scheduler(int len, int start) //begin process (append to end of ready queue
 }
 
 void run_process(){
+    int errCode;
     while((head->counter)!=(head->length)){
-        errCode = parseInput(mem_get_value(head->start+head->counter));
+        errCode = parseInput(mem_get_value(NULL, head->start+head->counter));
         head->counter++;
     }
     end_process();
