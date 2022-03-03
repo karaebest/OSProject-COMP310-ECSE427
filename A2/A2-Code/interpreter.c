@@ -15,7 +15,7 @@ int badcommandTooManyTokens();
 int badcommandFileDoesNotExist();
 int set(char* var, char* value, int index);
 int print(char* var);
-int run(char* var, int length);
+void run(char* script);
 int my_ls();
 int echo();
 
@@ -64,34 +64,8 @@ int interpreter(char* command_args[], int args_size){
 	
 	} else if (strcmp(command_args[0], "run")==0) {
 		if (args_size != 2) return badcommand();
-
-		char line[100];
-
-		FILE *p = fopen(command_args[1],"rt");
-
-		if(p == NULL){
-			return badcommandFileDoesNotExist();
-		}
-
-		fgets(line,99,p);
-		int length = 1;
-		int index = set(command_args[1], line, -1) + 1; //set first line of script
-		
-		while(1){
-			memset(line, 0, sizeof(line));
-
-			if(feof(p)){
-				break;
-			}
-			fgets(line,99,p);
-			length++;
-			index = set(command_args[1], line, index) + 1;
-		}
-
-		fclose(p);
-		
-
-		return run(command_args[1], length);
+		run(command_args[1]);
+		return 0;
 	
 	} else if (strcmp(command_args[0], "my_ls")==0) {
 		if (args_size > 2) return badcommand();
@@ -144,25 +118,44 @@ int set(char* var, char* value, int index){
 	// strcat(buffer, link);
 	// strcat(buffer, value);
 
-	
-
 	return mem_set_value(var, value, index);
-	//make sure this doesn't mess w/ errCode
-
 }
 
 int print(char* var){
 	printf("%s\n", mem_get_value(var, 0)); 
 	return 0;
 }
-//pass in pointer to script in mem and length of script
-int run(char* var, int length){  
-	int errCode = 0;
-	for(int i=0; i<length; i++){
-		errCode = parseInput(mem_get_value(var, i));
+
+void run(char* script){
+	//check for existing script in shell mem here in next assignment
+	char line[100];
+
+	FILE *p = fopen(script,"rt");
+
+	if(p == NULL){
+		return badcommandFileDoesNotExist();
 	}
 
-	return errCode;
+	fgets(line,99,p);
+	int length = 1;
+	int index = set(script, line, -1) + 1; //set first line of script
+																			//will need to check for not enough space here in next assignment
+	int start = index-1;
+	
+	while(1){
+		memset(line, 0, sizeof(line));
+
+		if(feof(p)){
+			break;
+		}
+		fgets(line,99,p);
+		length++;
+		index = set(script, line, index) + 1;
+																			//will need to check for not enough space here in next assignment
+	}
+
+	fclose(p);
+	scheduler(length, start);   
 }
 
 int my_ls(){
