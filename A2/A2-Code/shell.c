@@ -6,6 +6,7 @@
 
 #include "interpreter.h"
 #include "shellmemory.h"
+#include "PCB.h"
 
 
 int MAX_USER_INPUT = 1000;

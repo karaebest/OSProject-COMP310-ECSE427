@@ -4,6 +4,7 @@
 
 #include "shellmemory.h"
 #include "shell.h"
+#include "PCB.h"
 
 int MAX_ARGS_SIZE = 7;
 
@@ -88,7 +89,7 @@ int interpreter(char* command_args[], int args_size){
 		}
 
 		fclose(p);
-		//store info in PCB here
+		
 
 		return run(command_args[1], length);
 	
