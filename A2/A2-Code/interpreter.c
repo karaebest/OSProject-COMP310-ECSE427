@@ -137,29 +137,26 @@ int run(char* script){
 		return badcommandFileDoesNotExist();
 	}
 
-	fgets(line,99,p);
-	printf("Line: %s", line);
 	int length = 1;
-	
-	int start = mem_set_value(name_script, line, -1); //set first line of script
-	int index = start+1; 
-	
-	while(1){
+	int index; 
 
+	fgets(line,99,p);
+	while(1){
+		index = mem_set_value(name_script, line, index) + 1;
 		memset(line, 0, sizeof(line));
 		printf("line after memset: %s\n", line);
-		fgets(line,99,p);
 		
 		if(feof(p)){
 			break;
 		}
-		index = mem_set_value(name_script, line, index) + 1;
+		fgets(line,99,p);
 		length++;
 		printf("Line: %s", line);
 	}
 
 	fclose(p);
 	free(name_script);
+	int start = index - length;
 	int errCode = scheduler(length, start);
 	return errCode;
 }
