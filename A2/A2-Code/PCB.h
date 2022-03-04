@@ -1,1 +1,1 @@
-void scheduler(int length, int start_index);
+int scheduler(int length, int start_index);

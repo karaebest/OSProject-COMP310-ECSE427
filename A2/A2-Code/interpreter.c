@@ -13,7 +13,7 @@ int quit();
 int badcommand();
 int badcommandTooManyTokens();
 int badcommandFileDoesNotExist();
-int set(char* var, char* value, int index);
+int set(char* var, char* value);
 int print(char* var);
 int run(char* script);
 int my_ls();
@@ -55,7 +55,7 @@ int interpreter(char* command_args[], int args_size){
 				strncat(value, &spaceChar, 1);
 			}
 		}
-		set(command_args[1], value, -1);
+		set(command_args[1], value);
 		return 0;
 	
 	} else if (strcmp(command_args[0], "print")==0) {
@@ -64,7 +64,6 @@ int interpreter(char* command_args[], int args_size){
 	
 	} else if (strcmp(command_args[0], "run")==0) {
 		if (args_size != 2) return badcommand();
-		
 		return run(command_args[1]);
 	
 	} else if (strcmp(command_args[0], "my_ls")==0) {
@@ -110,7 +109,7 @@ int badcommandFileDoesNotExist(){
 	return 3;
 }
 
-int set(char* var, char* value, int index){
+int set(char* var, char* value){
 
 	// char *link = "=";
 	// char buffer[1000];
@@ -118,7 +117,7 @@ int set(char* var, char* value, int index){
 	// strcat(buffer, link);
 	// strcat(buffer, value);
 
-	return mem_set_value(var, value, index);
+	return mem_set_value(var, value, -1);
 }
 
 int print(char* var){
@@ -137,26 +136,31 @@ int run(char* script){
 	}
 
 	fgets(line,99,p);
+	printf("Line: %s", line);
 	int length = 1;
-	int index = set(script, line, -1) + 1; //set first line of script
+	
 																			//will need to check for not enough space here in next assignment
-	int start = index-1;
+	int start = mem_set_value(script, line, -1); //set first line of script
+	int index = start+1; 
 	
 	while(1){
-		memset(line, 0, sizeof(line));
 
+		memset(line, 0, sizeof(line));
+		fgets(line,99,p);
+		
 		if(feof(p)){
 			break;
 		}
-		fgets(line,99,p);
+		index = mem_set_value(script, line, index) + 1;
+		printf("Line: %s", line);
 		length++;
-		index = set(script, line, index) + 1;
-																			//will need to check for not enough space here in next assignment
+		printf("len: %d", length);
 	}
 
 	fclose(p);
-	scheduler(length, start);
-	return 0;   
+	
+	int errCode = scheduler(length, start);
+	return errCode;
 }
 
 int my_ls(){

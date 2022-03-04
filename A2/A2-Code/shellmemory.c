@@ -22,16 +22,16 @@ void mem_init(){
 }
 
 // Set key value pair at index (unless index == -1, then stored at next free space)
-int mem_set_value(char *var_in, char *value_in, int index) { //if index != -1, store var + value at index
+int mem_set_value(char *var_in, char *value_in, int index) { 
 	
 	if(index==-1){
 		int i;
-			for (i=0; i<1000; i++){ 
-				if (strcmp(shellmemory[i].var, var_in) == 0){
-					shellmemory[i].value = strdup(value_in);
-					return i;
-				} 
-			}
+		for (i=0; i<1000; i++){ 
+			if (strcmp(shellmemory[i].var, var_in) == 0){
+				shellmemory[i].value = strdup(value_in);
+				return i;
+			} 
+		}
 
 		//Value does not exist, need to find a free spot.
 		for (i=0; i<1000; i++){

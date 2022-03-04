@@ -21,9 +21,9 @@ typedef struct PCB_struct{
 static PCB_t* head = NULL;//pointer to head of ready queue
 
 void end_process();
-void run_process();
+int run_process();
 
-void scheduler(int len, int start) //begin process (append to end of ready queue), return pid, will need to change for multi-progr.
+int scheduler(int len, int start) //begin process (append to end of ready queue), return pid, will need to change for multi-progr.
 {
     //for multi FCFS: add bool multi as arg, if true return w/o running after adding to queue, in interpreter change to false for last prog
     if(head == NULL){
@@ -45,16 +45,17 @@ void scheduler(int len, int start) //begin process (append to end of ready queue
     current->next->length = len;
     current->next->next = NULL;
 
-    run_process();
+    return run_process();
 }
 
-void run_process(){
+int run_process(){
     int errCode;
     while((head->counter)!=(head->length)){
         errCode = parseInput(mem_get_value(NULL, head->start+head->counter));
         head->counter++;
     }
     end_process();
+    return errCode;
 }
 
 void end_process() //no need to check for empty linked list because will never be called in that case
