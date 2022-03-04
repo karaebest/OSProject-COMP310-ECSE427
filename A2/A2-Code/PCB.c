@@ -45,6 +45,8 @@ int scheduler(int len, int start) //begin process (append to end of ready queue)
     current->next->length = len;
     current->next->next = NULL;
 
+    head = current->next;
+
     return run_process();
 }
 

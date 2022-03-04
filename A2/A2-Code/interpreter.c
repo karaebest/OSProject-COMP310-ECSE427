@@ -126,7 +126,6 @@ int print(char* var){
 }
 
 int run(char* script){
-	//check for existing script in shell mem here in next assignment
 	char line[100];
 	char* name_script = malloc(sizeof(script)-4);
 	strncpy(name_script, script, sizeof(script)-4);
@@ -142,11 +141,9 @@ int run(char* script){
 
 	fgets(line,99,p);
 	while(1){
-		printf("Line: %s", line);
 		length++;
 		index = mem_set_value(name_script, line, index) + 1;
 		memset(line, 0, sizeof(line));
-		printf("line after memset: %s\n", line);
 		if(feof(p)){
 			break;
 		}
