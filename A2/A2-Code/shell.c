@@ -74,8 +74,13 @@ int parseInput(char ui[]) {
 			for(; ui[a]==' ' && a<1000; a++);		// skip white spaces
 			continue;
 		}
-		a++; 
 		w++;
+
+		if(ui[a] == '\0') {
+			break;
+		}
+
+		a++;
 	}
 	errorCode = interpreter(words, w);
 
