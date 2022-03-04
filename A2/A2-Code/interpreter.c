@@ -128,6 +128,8 @@ int print(char* var){
 int run(char* script){
 	//check for existing script in shell mem here in next assignment
 	char line[100];
+	char* name_script = malloc(sizeof(script)-4);
+	strncpy(name_script, script, sizeof(script)-4);
 
 	FILE *p = fopen(script,"rt");
 
@@ -139,25 +141,25 @@ int run(char* script){
 	printf("Line: %s", line);
 	int length = 1;
 	
-																			//will need to check for not enough space here in next assignment
-	int start = mem_set_value(script, line, -1); //set first line of script
+	int start = mem_set_value(name_script, line, -1); //set first line of script
 	int index = start+1; 
 	
 	while(1){
 
 		memset(line, 0, sizeof(line));
+		printf("line after memset: %s\n", line);
 		fgets(line,99,p);
 		
 		if(feof(p)){
 			break;
 		}
-		index = mem_set_value(script, line, index) + 1;
-		printf("Line: %s\n Len: %i", line, length);
+		index = mem_set_value(name_script, line, index) + 1;
 		length++;
+		printf("Line: %s", line);
 	}
 
 	fclose(p);
-	
+	free(name_script);
 	int errCode = scheduler(length, start);
 	return errCode;
 }
