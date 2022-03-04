@@ -17,7 +17,7 @@ int set(char* var, char* value);
 int print(char* var);
 int run(char* script, char* policy);
 int my_ls();
-int echo();
+int echo(char* var);
 int exec(char scripts[], char* policy, int num_scripts);
 
 int interpreter(char* command_args[], int args_size){
@@ -78,7 +78,7 @@ int interpreter(char* command_args[], int args_size){
 		if(args_size < 3) return badcommand();
 		char script_list[args_size-2]; 		//TO DO -> make sure no memory leaks
 		for(i=1; i<args_size-1; i++){
-			strcpy(script_list[i-1], command_args[i]);
+			strcpy(&script_list[i-1], command_args[i]);
 		}
 		return exec(script_list, command_args[args_size-1], args_size-2);
 	}
@@ -135,7 +135,7 @@ int print(char* var){
 
 int run(char* script, char* policy){ 
 	char line[100];
-	char* name_script = (char*)malloc(sizeof(script)-4);
+	char* name_script = malloc(sizeof(script)-4);
 	strncpy(name_script, script, sizeof(script)-4);
 
 	FILE *p = fopen(script,"rt");
@@ -189,10 +189,10 @@ int exec(char scripts[], char* policy, int num_scripts){
 	int index;
 	
 	for(int i=0; i<num_scripts; i++){
-		name_script = (char*)malloc(sizeof(scripts[i])-4);
-		strncpy(name_script, scripts[i], sizeof(scripts[i])-4);
+		name_script = malloc(sizeof(&scripts[i])-4);
+		strncpy(name_script, &scripts[i], sizeof(&scripts[i])-4);
 
-		FILE *p = fopen(scripts[i],"rt");
+		FILE *p = fopen(&scripts[i],"rt");
 
 		if(p == NULL){
 			return badcommandFileDoesNotExist();
