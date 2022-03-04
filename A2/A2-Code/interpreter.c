@@ -135,7 +135,7 @@ int print(char* var){
 
 int run(char* script, char* policy){ 
 	char line[100];
-	char* name_script = malloc(sizeof(script)-4);
+	char* name_script = (char*)malloc(sizeof(script)-4);
 	strncpy(name_script, script, sizeof(script)-4);
 
 	FILE *p = fopen(script,"rt");
@@ -181,34 +181,41 @@ int echo(char* var){
 }
 
 int exec(char scripts[], char* policy, int num_scripts){
+	char line[100];
+	char* name_script;
+	int errCode;
+	int start;
+	int length;
+	int index;
+	
+	for(int i=0; i<num_scripts; i++){
+		name_script = (char*)malloc(sizeof(scripts[i])-4);
+		strncpy(name_script, scripts[i], sizeof(scripts[i])-4);
 
-	// char line[100];
-	// char* name_script = malloc(sizeof(script)-4);
-	// strncpy(name_script, script, sizeof(script)-4);
+		FILE *p = fopen(scripts[i],"rt");
 
-	// FILE *p = fopen(script,"rt");
+		if(p == NULL){
+			return badcommandFileDoesNotExist();
+		}
 
-	// if(p == NULL){
-	// 	return badcommandFileDoesNotExist();
-	// }
+		length = 0; 
 
-	// int length = 0;
-	// int index; 
+		fgets(line,99,p);
+		while(1){
+			length++;
+			index = mem_set_value(name_script, line, index) + 1;
+			memset(line, 0, sizeof(line));
+			if(feof(p)){
+				break;
+			}
+			fgets(line,99,p);
+		}
 
-	// fgets(line,99,p);
-	// while(1){
-	// 	length++;
-	// 	index = mem_set_value(name_script, line, index) + 1;
-	// 	memset(line, 0, sizeof(line));
-	// 	if(feof(p)){
-	// 		break;
-	// 	}
-	// 	fgets(line,99,p);
-	// }
+		fclose(p);
+		free(name_script);
+		start = index - length;
 
-	// fclose(p);
-	// free(name_script);
-	// int start = index - length;
-	// int errCode = scheduler(length, start);
-	return 0;
+		if(i!=num_scripts-1) errCode = scheduler(length, start, 1, NULL);
+	}
+	return errCode = scheduler(length, start, -1, NULL);
 }

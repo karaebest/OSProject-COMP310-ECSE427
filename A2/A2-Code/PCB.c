@@ -23,9 +23,8 @@ static PCB_t* head = NULL;//pointer to head of ready queue
 void end_process();
 int run_process();
 
-int scheduler(int len, int start, int multi, char* policy) //begin process (append to end of ready queue), return pid, will need to change for multi-progr.
-{
-    //for multi FCFS: add bool multi as arg, if true return w/o running after adding to queue, in interpreter change to false for last prog
+int scheduler(int len, int start, int multi, char* policy){ //begin process (append to end of ready queue), return pid, will need to change for multi-progr.
+    //for multi FCFS: add bool multi as arg, if 1 return w/o running after adding to queue, in interpreter change to false for last prog
     int pid_counter = 1; //to make sure new processes have unique pid, might have to change this later
 
     if(head == NULL){
@@ -51,6 +50,7 @@ int scheduler(int len, int start, int multi, char* policy) //begin process (appe
         current->next->length = len;
         current->next->next = NULL;
     }
+    if(multi==1) return 0;
 
     return run_process();
 }
