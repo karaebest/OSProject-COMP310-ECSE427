@@ -15,9 +15,10 @@ int badcommandTooManyTokens();
 int badcommandFileDoesNotExist();
 int set(char* var, char* value);
 int print(char* var);
-int run(char* script);
+int run(char* script, char* policy);
 int my_ls();
 int echo();
+int exec(char scripts[], char* policy, int num_scripts);
 
 int interpreter(char* command_args[], int args_size){
 	int i;
@@ -44,7 +45,6 @@ int interpreter(char* command_args[], int args_size){
 		return quit();
 
 	} else if (strcmp(command_args[0], "set")==0) {
-		//set
 		if (args_size < 3) return badcommand();
 		char* value = (char*)calloc(1,150);
 		char spaceChar = ' ';
@@ -63,8 +63,8 @@ int interpreter(char* command_args[], int args_size){
 		return print(command_args[1]);
 	
 	} else if (strcmp(command_args[0], "run")==0) {
-		if (args_size != 2) return badcommand();
-		return run(command_args[1]);
+		if (args_size != 3) return badcommand(); 
+		return run(command_args[1], command_args[2]); 
 	
 	} else if (strcmp(command_args[0], "my_ls")==0) {
 		if (args_size > 2) return badcommand();
@@ -74,7 +74,15 @@ int interpreter(char* command_args[], int args_size){
 		if (args_size > 2) return badcommand();
 		return echo(command_args[1]);
 	
-	} else return badcommand();
+	}else if(strcmp(command_args[0], "exec")==0){  
+		if(args_size < 3) return badcommand();
+		char script_list[args_size-2]; 		//TO DO -> make sure no memory leaks
+		for(i=1; i<args_size-1; i++){
+			strcpy(script_list[i-1], command_args[i]);
+		}
+		return exec(script_list, command_args[args_size-1], args_size-2);
+	}
+	else return badcommand();
 }
 
 int help(){
@@ -125,7 +133,7 @@ int print(char* var){
 	return 0;
 }
 
-int run(char* script){
+int run(char* script, char* policy){ 
 	char line[100];
 	char* name_script = malloc(sizeof(script)-4);
 	strncpy(name_script, script, sizeof(script)-4);
@@ -153,7 +161,7 @@ int run(char* script){
 	fclose(p);
 	free(name_script);
 	int start = index - length;
-	int errCode = scheduler(length, start);
+	int errCode = scheduler(length, start, -1, NULL); //TO DO -> change null to it at scheduler call
 	return errCode;
 }
 
@@ -170,4 +178,37 @@ int echo(char* var){
 		printf("%s\n", var); 
 	}
 	return 0; 
+}
+
+int exec(char scripts[], char* policy, int num_scripts){
+
+	// char line[100];
+	// char* name_script = malloc(sizeof(script)-4);
+	// strncpy(name_script, script, sizeof(script)-4);
+
+	// FILE *p = fopen(script,"rt");
+
+	// if(p == NULL){
+	// 	return badcommandFileDoesNotExist();
+	// }
+
+	// int length = 0;
+	// int index; 
+
+	// fgets(line,99,p);
+	// while(1){
+	// 	length++;
+	// 	index = mem_set_value(name_script, line, index) + 1;
+	// 	memset(line, 0, sizeof(line));
+	// 	if(feof(p)){
+	// 		break;
+	// 	}
+	// 	fgets(line,99,p);
+	// }
+
+	// fclose(p);
+	// free(name_script);
+	// int start = index - length;
+	// int errCode = scheduler(length, start);
+	return 0;
 }

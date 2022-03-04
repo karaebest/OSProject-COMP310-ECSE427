@@ -23,29 +23,34 @@ static PCB_t* head = NULL;//pointer to head of ready queue
 void end_process();
 int run_process();
 
-int scheduler(int len, int start) //begin process (append to end of ready queue), return pid, will need to change for multi-progr.
+int scheduler(int len, int start, int multi, char* policy) //begin process (append to end of ready queue), return pid, will need to change for multi-progr.
 {
     //for multi FCFS: add bool multi as arg, if true return w/o running after adding to queue, in interpreter change to false for last prog
-    if(head == NULL){
-        head = malloc(sizeof(PCB_t));
-    }
-    PCB_t *current = head;
     int pid_counter = 1; //to make sure new processes have unique pid, might have to change this later
 
-    while (current->next != NULL)
-    {
-        pid_counter = current->pid;
-        current = current->next;
+    if(head == NULL){
+        head = (PCB_t *)malloc(sizeof(PCB_t));  
+        head->pid = pid_counter;
+        head->counter = 0;  
+        head->start = start;
+        head->length = len;
+        head->next = NULL;
+    }else{
+        PCB_t *current = head;
+    
+        while (current->next != NULL)
+        {
+            pid_counter = current->pid;
+            current = current->next;
+        }
+
+        current->next = (PCB_t *)malloc(sizeof(PCB_t));
+        current->next->pid = ++pid_counter;
+        current->next->counter = 0;  
+        current->next->start = start;
+        current->next->length = len;
+        current->next->next = NULL;
     }
-
-    current->next = (PCB_t *)malloc(sizeof(PCB_t));
-    current->next->pid = ++pid_counter;
-    current->next->counter = 0;  
-    current->next->start = start;
-    current->next->length = len;
-    current->next->next = NULL;
-
-    head = current->next;
 
     return run_process();
 }
