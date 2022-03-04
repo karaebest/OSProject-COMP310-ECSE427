@@ -152,9 +152,8 @@ int run(char* script){
 			break;
 		}
 		index = mem_set_value(script, line, index) + 1;
-		printf("Line: %s", line);
+		printf("Line: %s\n Len: %i", line, length);
 		length++;
-		printf("len: %d", length);
 	}
 
 	fclose(p);
