@@ -13,6 +13,7 @@ int quit();
 int badcommand();
 int badcommandTooManyTokens();
 int badcommandFileDoesNotExist();
+int badcommandSameFileName();
 int set(char* var, char* value);
 int print(char* var);
 int run(char* script, char* policy, int multi);
@@ -74,9 +75,19 @@ int interpreter(char* command_args[], int args_size){
 		return echo(command_args[1]);
 	
 	}else if(strcmp(command_args[0], "exec")==0){  
-		if(args_size < 3) return badcommand();
-		//if(args_size > 5) return badcommand(); <-- maybe add if no assumptions that only 3 files being passed
-
+		if(args_size < 3 || args_size > 5) return badcommand();
+		else if (args_size == 4) {
+			if (strcmp(command_args[1], command_args[2]) == 0) {
+				return badcommandSameFileName();
+			}
+		}
+		else if(args_size == 5) {
+			if (strcmp(command_args[1], command_args[2]) == 0 
+					|| strcmp(command_args[2], command_args[3]) == 0 
+					|| strcmp(command_args[1], command_args[3]) == 0) {
+				return badcommandSameFileName();
+			}
+		}
 		for(int i = 1; i<args_size-1; i++){
 			if(i==args_size-2) return run(command_args[i], command_args[args_size-1], 0);
 			run(command_args[i], command_args[args_size-1], 1);
@@ -117,6 +128,11 @@ int badcommandTooManyTokens(){
 int badcommandFileDoesNotExist(){
 	printf("%s\n", "Bad command: File not found");
 	return 3;
+}
+
+int badcommandSameFileName(){
+	printf("%s\n", "Bad command: Same file name");
+	return 4;
 }
 
 int set(char* var, char* value){
