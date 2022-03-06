@@ -20,7 +20,7 @@ typedef struct PCB_struct{
 
 static PCB_t* head = NULL;//pointer to head of ready queue
 
-PCB_t* end_process();
+int end_process();
 int run_process();
 void end_all_process();
 
@@ -71,13 +71,15 @@ int run_process(char* policy){
             }
             end_process(head->pid);
         }
+        printf("FCFS done");
     }
     else if (strcmp(policy, "RR") == 0) {
         while ((current != NULL)) {
             int diff = current->length - current->counter;
-            // printf("current pid: %d, current diff: %d\n", current->pid, diff);
             if (diff <= 0) {
-                current = end_process(current->pid);
+                PCB_t* next_p = current->next;
+                end_process(current->pid);
+                current = next_p;
                 if (current == NULL) current = head;
                 continue;
             }
@@ -95,6 +97,7 @@ int run_process(char* policy){
             if (current->next == NULL) current = head;
             else current = current->next;
         }
+        printf("RR done");
     }
     else if (strcmp(policy, "SJF") == 0) {
         while (head != NULL) {
@@ -116,26 +119,28 @@ int run_process(char* policy){
                 }
                 minjob->counter++;
             }
-            printf("minjob pid: %d\n", minjob->pid);
             end_process(minjob->pid);
         }
+        printf("SJF done");
     }
     return errCode;
 }
 
-PCB_t* end_process(int pid) //no need to check for empty linked list because will never be called in that case
+int end_process(int pid) //no need to check for empty linked list because will never be called in that case
 {
     if(head->pid==pid){
         mem_delete_script(head->start, head->length); //delete script code from shell mem
-        PCB_t* next_p = head->next;
-        free(head);
-        head = next_p;
-        if (head == NULL) {
-            exit(0);
+        if (head->next != NULL) {
+            PCB_t* next_p = head->next;
+            free(head);
+            head = next_p;
         }
-        printf("deleted pid: %d, head pid: %d\n", pid, head->pid);
-        return head;
-    } else{
+        else {
+            free(head);
+            head = NULL;
+        }
+        return 0;
+    } else {
         PCB_t* previous = head;
         PCB_t* current = head->next;
         while (current->pid != pid) {
@@ -145,10 +150,9 @@ PCB_t* end_process(int pid) //no need to check for empty linked list because wil
         previous->next = current->next;
         mem_delete_script(current->start, current->length); //delete script code from shell mem
         free(current);
-        printf("previous pid: %d, next pid: %d\n", previous->pid, previous->next->pid);
-        return previous->next;
+        return 0;
     }
-    return NULL;
+    return -1;
 }
 
 void end_all_process() { // if an issue arose during execution, delete the PCB linked list and free all memory
