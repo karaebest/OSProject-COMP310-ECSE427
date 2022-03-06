@@ -40,9 +40,9 @@ int scheduler(int len, int start, int multi, char* policy){ //begin process (app
     
         while (current->next != NULL)
         {
-            pid_counter = current->pid;
             current = current->next;
         }
+        pid_counter = current->pid;
 
         current->next = (PCB_t *)malloc(sizeof(PCB_t));
         current->next->pid = ++pid_counter;
@@ -97,14 +97,14 @@ int run_process(char* policy){
         }
     }
     else if (strcmp(policy, "SJF") == 0) {
-        int minlength = -1;
-        while (head != NULL) {  
+        while (head != NULL) {
+            int minlength = -1;
             PCB_t *minjob = head;
             current = head;
             while (current != NULL) {
                 if (minlength > current->length || minlength == -1) {
-                    minlength = current->length;
                     minjob = current;
+                    minlength = minjob->length;
                 }
                 current = current->next;
             }
@@ -116,6 +116,7 @@ int run_process(char* policy){
                 }
                 minjob->counter++;
             }
+            printf("minjob pid: %d\n", minjob->pid);
             end_process(minjob->pid);
         }
     }
@@ -129,6 +130,10 @@ PCB_t* end_process(int pid) //no need to check for empty linked list because wil
         PCB_t* next_p = head->next;
         free(head);
         head = next_p;
+        if (head == NULL) {
+            exit(0);
+        }
+        printf("deleted pid: %d, head pid: %d\n", pid, head->pid);
         return head;
     } else{
         PCB_t* previous = head;
@@ -140,6 +145,7 @@ PCB_t* end_process(int pid) //no need to check for empty linked list because wil
         previous->next = current->next;
         mem_delete_script(current->start, current->length); //delete script code from shell mem
         free(current);
+        printf("previous pid: %d, next pid: %d\n", previous->pid, previous->next->pid);
         return previous->next;
     }
     return NULL;
