@@ -20,8 +20,9 @@ typedef struct PCB_struct{
 
 static PCB_t* head = NULL;//pointer to head of ready queue
 
-void end_process();
+PCB_t* end_process();
 int run_process();
+void end_all_process();
 
 int scheduler(int len, int start, int multi, char* policy){ //begin process (append to end of ready queue), return pid, will need to change for multi-progr.
     //for multi FCFS: add bool multi as arg, if 1 return w/o running after adding to queue, in interpreter change to false for last prog
@@ -52,26 +53,101 @@ int scheduler(int len, int start, int multi, char* policy){ //begin process (app
     }
     if(multi==1) return 0;
 
-    return run_process();
+    return run_process(policy);
 }
 
-int run_process(){
+int run_process(char* policy){
     int errCode;
-    while((head->counter)!=(head->length)){
-        errCode = parseInput(mem_get_value(NULL, head->start+head->counter));
-        head->counter++;
+    PCB_t *current = head;
+    if (strcmp(policy, "FCFS") == 0) {
+        while ((head != NULL)) {
+            while((head->counter)!=(head->length)){
+                errCode = parseInput(mem_get_value(NULL, head->start+head->counter));
+                if (errCode != 0) {
+                    end_all_process();
+                    return errCode;
+                }
+                head->counter++;
+            }
+            end_process(head->pid);
+        }
     }
-    end_process();
+    else if (strcmp(policy, "RR") == 0) {
+        while ((current != NULL)) {
+            int diff = current->length - current->counter;
+            // printf("current pid: %d, current diff: %d\n", current->pid, diff);
+            if (diff <= 0) {
+                current = end_process(current->pid);
+                if (current == NULL) current = head;
+                continue;
+            }
+            else if (diff > 2){
+                diff = 2;
+            }
+            for (int i=0; i < diff; i++) {
+                errCode = parseInput(mem_get_value(NULL, current->start+current->counter));
+                if (errCode != 0) {
+                    end_all_process();
+                    return errCode;
+                }
+                current->counter++;
+            }
+            if (current->next == NULL) current = head;
+            else current = current->next;
+        }
+    }
+    else if (strcmp(policy, "SJF") == 0) {
+        int minlength = -1;
+        while (head != NULL) {  
+            PCB_t *minjob = head;
+            current = head;
+            while (current != NULL) {
+                if (minlength > current->length || minlength == -1) {
+                    minlength = current->length;
+                    minjob = current;
+                }
+                current = current->next;
+            }
+            while((minjob->counter)!=(minjob->length)){
+                errCode = parseInput(mem_get_value(NULL, minjob->start+minjob->counter));
+                if (errCode != 0) {
+                    end_all_process();
+                    return errCode;
+                }
+                minjob->counter++;
+            }
+            end_process(minjob->pid);
+        }
+    }
     return errCode;
 }
 
-void end_process() //no need to check for empty linked list because will never be called in that case
+PCB_t* end_process(int pid) //no need to check for empty linked list because will never be called in that case
 {
-    if(head->next==NULL){
+    if(head->pid==pid){
         mem_delete_script(head->start, head->length); //delete script code from shell mem
+        PCB_t* next_p = head->next;
         free(head);
-        head = NULL;
-    }else{
+        head = next_p;
+        return head;
+    } else{
+        PCB_t* previous = head;
+        PCB_t* current = head->next;
+        while (current->pid != pid) {
+            previous = current;
+            current = current->next;
+        }
+        previous->next = current->next;
+        mem_delete_script(current->start, current->length); //delete script code from shell mem
+        free(current);
+        return previous->next;
+    }
+    return NULL;
+}
+
+void end_all_process() { // if an issue arose during execution, delete the PCB linked list and free all memory
+    while (head != NULL) {
+        mem_delete_script(head->start, head->length); //delete script code from shell mem
         PCB_t* next_p = head->next;
         free(head);
         head = next_p;

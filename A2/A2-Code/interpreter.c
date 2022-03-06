@@ -62,8 +62,8 @@ int interpreter(char* command_args[], int args_size){
 		return print(command_args[1]);
 	
 	} else if (strcmp(command_args[0], "run")==0) {
-		if (args_size != 3) return badcommand(); 
-		return run(command_args[1], command_args[2], -1); 
+		if (args_size != 2) return badcommand(); 
+		return run(command_args[1], "FCFS", 0); 
 	
 	} else if (strcmp(command_args[0], "my_ls")==0) {
 		if (args_size > 2) return badcommand();
@@ -78,8 +78,8 @@ int interpreter(char* command_args[], int args_size){
 		//if(args_size > 5) return badcommand(); <-- maybe add if no assumptions that only 3 files being passed
 
 		for(int i = 1; i<args_size-1; i++){
-			if(i==args_size-2) return run(command_args[i], command_args[args_size-1], -1);
-			run(command_args[i], command_args[args_size-1], -1);
+			if(i==args_size-2) return run(command_args[i], command_args[args_size-1], 0);
+			run(command_args[i], command_args[args_size-1], 1);
 		}
 		return 0;
 		
