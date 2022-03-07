@@ -192,9 +192,7 @@ void age_all_process() {
     if (head != NULL) {
         PCB_t* current = head->next;
         while (current != NULL) {
-            // printf("old pid: %d, estimate: %d\n", current->pid, current->estimate);
             if (current->estimate > 0) current->estimate--; // decrease if estimate is nonzero
-            // printf("new pid: %d, estimate: %d\n", current->pid, current->estimate);
             current = current->next;
         }
     }
