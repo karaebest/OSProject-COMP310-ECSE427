@@ -4,6 +4,7 @@
 
 #include "shellmemory.h"
 #include "shell.h"
+#include "PCB.h"
 
 int MAX_ARGS_SIZE = 7;
 
@@ -12,11 +13,12 @@ int quit();
 int badcommand();
 int badcommandTooManyTokens();
 int badcommandFileDoesNotExist();
+int badcommandSameFileName();
 int set(char* var, char* value);
 int print(char* var);
-int run(char* script);
+int run(char* script, char* policy, int multi);
 int my_ls();
-int echo();
+int echo(char* var);
 
 int interpreter(char* command_args[], int args_size){
 	int i;
@@ -43,7 +45,6 @@ int interpreter(char* command_args[], int args_size){
 		return quit();
 
 	} else if (strcmp(command_args[0], "set")==0) {
-		//set
 		if (args_size < 3) return badcommand();
 		char* value = (char*)calloc(1,150);
 		char spaceChar = ' ';
@@ -54,15 +55,16 @@ int interpreter(char* command_args[], int args_size){
 				strncat(value, &spaceChar, 1);
 			}
 		}
-		return set(command_args[1], value);
+		set(command_args[1], value);
+		return 0;
 	
 	} else if (strcmp(command_args[0], "print")==0) {
 		if (args_size != 2) return badcommand();
 		return print(command_args[1]);
 	
 	} else if (strcmp(command_args[0], "run")==0) {
-		if (args_size != 2) return badcommand();
-		return run(command_args[1]);
+		if (args_size != 2) return badcommand(); 
+		return run(command_args[1], "FCFS", 0); 
 	
 	} else if (strcmp(command_args[0], "my_ls")==0) {
 		if (args_size > 2) return badcommand();
@@ -72,7 +74,29 @@ int interpreter(char* command_args[], int args_size){
 		if (args_size > 2) return badcommand();
 		return echo(command_args[1]);
 	
-	} else return badcommand();
+	}else if(strcmp(command_args[0], "exec")==0){  
+		if(args_size < 3 || args_size > 5) return badcommand();
+		// check for duplicate filenames
+		else if (args_size == 4) {
+			if (strcmp(command_args[1], command_args[2]) == 0) {
+				return badcommandSameFileName();
+			}
+		}
+		else if(args_size == 5) {
+			if (strcmp(command_args[1], command_args[2]) == 0 
+					|| strcmp(command_args[2], command_args[3]) == 0 
+					|| strcmp(command_args[1], command_args[3]) == 0) {
+				return badcommandSameFileName();
+			}
+		}
+		for(int i = 1; i<args_size-1; i++){
+			if(i==args_size-2) return run(command_args[i], command_args[args_size-1], 0);
+			run(command_args[i], command_args[args_size-1], 1);
+		}
+		return 0;
+		
+	}
+	else return badcommand();
 }
 
 int help(){
@@ -107,47 +131,56 @@ int badcommandFileDoesNotExist(){
 	return 3;
 }
 
+int badcommandSameFileName(){
+	printf("%s\n", "Bad command: Same file name");
+	return 4;
+}
+
 int set(char* var, char* value){
 
-	char *link = "=";
-	char buffer[1000];
-	strcpy(buffer, var);
-	strcat(buffer, link);
-	strcat(buffer, value);
+	// char *link = "=";
+	// char buffer[1000];
+	// strcpy(buffer, var);
+	// strcat(buffer, link);
+	// strcat(buffer, value);
 
-	mem_set_value(var, value);
-
-	return 0;
-
+	return mem_set_value(var, value, -1);
 }
 
 int print(char* var){
-	printf("%s\n", mem_get_value(var)); 
+	printf("%s\n", mem_get_value(var, 0)); 
 	return 0;
 }
 
-int run(char* script){
-	int errCode = 0;
-	char line[1000];
-	FILE *p = fopen(script,"rt");  // the program is in a file
+int run(char* script, char* policy, int multi){ 
+	char line[100];
+	char* name_script = malloc(sizeof(script));
+	name_script = strncpy(name_script, script, sizeof(script));
+
+	FILE *p = fopen(script,"rt");
 
 	if(p == NULL){
 		return badcommandFileDoesNotExist();
 	}
 
-	fgets(line,999,p);
-	while(1){
-		errCode = parseInput(line);	// which calls interpreter()
-		memset(line, 0, sizeof(line));
+	int length = 0;
+	int index; 
 
+	fgets(line,99,p);
+	while(1){
+		length++;
+		index = mem_set_value(name_script, line, index) + 1;
+		memset(line, 0, sizeof(line));
 		if(feof(p)){
 			break;
 		}
-		fgets(line,999,p);
+		fgets(line,99,p);
 	}
 
-    fclose(p);
-
+	fclose(p);
+	free(name_script);
+	int start = index - length;
+	int errCode = scheduler(length, start, multi, policy); //TO DO -> change null to it at scheduler call
 	return errCode;
 }
 
@@ -159,9 +192,10 @@ int my_ls(){
 int echo(char* var){
 	if(var[0] == '$'){
 		var++;
-		printf("%s\n", mem_get_value(var)); 
+		printf("%s\n", mem_get_value(var, 0)); 
 	}else{
 		printf("%s\n", var); 
 	}
 	return 0; 
 }
+

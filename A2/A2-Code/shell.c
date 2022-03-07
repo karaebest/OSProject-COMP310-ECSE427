@@ -6,6 +6,7 @@
 
 #include "interpreter.h"
 #include "shellmemory.h"
+#include "PCB.h"
 
 
 int MAX_USER_INPUT = 1000;
@@ -73,8 +74,13 @@ int parseInput(char ui[]) {
 			for(; ui[a]==' ' && a<1000; a++);		// skip white spaces
 			continue;
 		}
-		a++; 
 		w++;
+
+		if(ui[a] == '\0') {
+			break;
+		}
+
+		a++;
 	}
 	errorCode = interpreter(words, w);
 
