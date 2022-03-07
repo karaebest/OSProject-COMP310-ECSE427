@@ -8,10 +8,10 @@
 typedef struct PCB_struct{
     int pid;
     int counter; //index difference from script starting point in shell mem (start+counter = index of instruction being executed in shell mem)
-    int start;//starting index in shell memory
-    int length;//num lines of script
+    int start; //starting index in shell memory
+    int length; //num lines of script
     int estimate; //estimate length for aging
-    struct PCB_struct* next;//pointer to next PCB
+    struct PCB_struct* next; //pointer to next PCB
      
 } PCB_t;
 
@@ -26,9 +26,9 @@ void end_all_process();
 void promote_process(int);
 void age_all_process();
 
-int scheduler(int len, int start, int multi, char* policy){ //begin process (append to end of ready queue), return pid, will need to change for multi-progr.
-    //for multi FCFS: add bool multi as arg, if 1 return w/o running after adding to queue, in interpreter change to false for last prog
-    int pid_counter = 1; //to make sure new processes have unique pid, might have to change this later
+int scheduler(int len, int start, int multi, char* policy){ //begin process (append to end of ready queue), return pid
+    //for multi FCFS: add bool multi as arg, if 1 return w/o running after adding to queue, if 0 run processes after adding
+    int pid_counter = 1; //to make sure new processes have unique pid
 
     if(head == NULL){
         head = (PCB_t *)malloc(sizeof(PCB_t));  
@@ -63,65 +63,65 @@ int scheduler(int len, int start, int multi, char* policy){ //begin process (app
 int run_process(char* policy){
     int errCode;
     PCB_t *current = head;
-    if (strcmp(policy, "FCFS") == 0) {
+    if (strcmp(policy, "FCFS") == 0) { // first come first serve policy
         while ((head != NULL)) {
-            while((head->counter)!=(head->length)){
+            while((head->counter)!=(head->length)){ // run all instructions of script
                 errCode = parseInput(mem_get_value(NULL, head->start+head->counter));
-                if (errCode != 0) {
+                if (errCode != 0) { // exit upon error
                     end_all_process();
                     return errCode;
                 }
                 head->counter++;
             }
-            end_process(head->pid);
+            end_process(head->pid); // end process when done
         }
     }
-    else if (strcmp(policy, "RR") == 0) {
+    else if (strcmp(policy, "RR") == 0) { // round robin policy
         while ((current != NULL)) {
             int diff = current->length - current->counter;
-            if (diff <= 0) {
+            if (diff <= 0) { // if process is done, end it and go to next once
                 PCB_t* next_p = current->next;
                 end_process(current->pid);
                 current = next_p;
                 if (current == NULL) current = head;
                 continue;
             }
-            else if (diff > 2){
+            else if (diff > 2){ // limit execution to 2 instructions
                 diff = 2;
             }
             for (int i=0; i < diff; i++) {
                 errCode = parseInput(mem_get_value(NULL, current->start+current->counter));
-                if (errCode != 0) {
+                if (errCode != 0) { // exit upon error
                     end_all_process();
                     return errCode;
                 }
                 current->counter++;
             }
-            if (current->next == NULL) current = head;
-            else current = current->next;
+            if (current->next == NULL) current = head; // if at end of linked list, go back to head
+            else current = current->next; // go to next node
         }
     }
-    else if (strcmp(policy, "SJF") == 0) {
+    else if (strcmp(policy, "SJF") == 0) { // shortest job first policy
         while (head != NULL) {
             int minlength = -1;
             PCB_t *minjob = head;
             current = head;
-            while (current != NULL) {
+            while (current != NULL) { // find shortest job
                 if (minlength > current->length || minlength == -1) {
                     minjob = current;
                     minlength = minjob->length;
                 }
                 current = current->next;
             }
-            while ((minjob->counter) != (minjob->length)){
+            while ((minjob->counter) != (minjob->length)){ // run all instructions of script
                 errCode = parseInput(mem_get_value(NULL, minjob->start+minjob->counter));
-                if (errCode != 0) {
+                if (errCode != 0) { // exit upon error
                     end_all_process();
                     return errCode;
                 }
                 minjob->counter++;
             }
-            end_process(minjob->pid);
+            end_process(minjob->pid); // end process when done
         }
     }
     else if (strcmp(policy, "AGING") == 0) {
@@ -129,8 +129,7 @@ int run_process(char* policy){
             int minestimate = -1;
             PCB_t *minjob = head;
             current = head;
-            while (current != NULL) {
-                // printf("curr pid: %d, estimate: %d\n", current->pid, current->estimate);
+            while (current != NULL) { // find minimum estimate job
                 if (minestimate > current->estimate || minestimate == -1) {
                     minjob = current;
                     minestimate = minjob->estimate;
@@ -138,27 +137,29 @@ int run_process(char* policy){
                 current = current->next;
             }
             if (minjob != head) {
-                promote_process(minjob->pid);
+                promote_process(minjob->pid); // promote job
             }
             int diff = (head->length) - (head->counter);
-            if (diff > 0){
+            if (diff > 0){ // run 1 instruction
                 errCode = parseInput(mem_get_value(NULL, head->start+head->counter));
-                if (errCode != 0) {
+                if (errCode != 0) { // exit upon error
                     end_all_process();
                     return errCode;
                 }
                 head->counter++;
             }
-            if (diff == 1) {
+            if (diff == 1) { // if no more instructions, end process
                 end_process(head->pid);
             }
-            age_all_process();
+            age_all_process(); // decrease estimate by 1 for every process after head
         }
     }
     return errCode;
 }
 
+// helper function promote a process, and put head at the end of queue
 void promote_process(int pid) {
+    // put head process to last
     PCB_t* last = head;
     while (last->next!= NULL) {
         last = last->next;
@@ -167,6 +168,7 @@ void promote_process(int pid) {
     last->next = head;
     head->next = NULL;
     head = temp;
+    // promote other process to head
     if (head->pid != pid) {
         PCB_t* previous = head;
         PCB_t* current = head->next;
@@ -177,22 +179,24 @@ void promote_process(int pid) {
         previous->next = current->next;
         current->next = head;
         head = current;
-        // printf("promoted %d\n", head->pid);
     }
 }
 
+// helper function to reduce estimate by 1 for every process after head
 void age_all_process() {
     if (head != NULL) {
         PCB_t* current = head->next;
         while (current != NULL) {
-            if (current->estimate > 0) current->estimate--;
+            if (current->estimate > 0) current->estimate--; // decrease if estimate is nonzero
             current = current->next;
         }
     }
 }
 
+// helper function to end a process by pid
 int end_process(int pid) //no need to check for empty linked list because will never be called in that case
 {
+    // if deleting the head node
     if(head->pid==pid){
         mem_delete_script(head->start, head->length); //delete script code from shell mem
         if (head->next != NULL) {
@@ -205,6 +209,7 @@ int end_process(int pid) //no need to check for empty linked list because will n
             head = NULL;
         }
         return 0;
+    // if deleting another node
     } else {
         PCB_t* previous = head;
         PCB_t* current = head->next;
@@ -220,6 +225,7 @@ int end_process(int pid) //no need to check for empty linked list because will n
     return -1;
 }
 
+// helper function to end all processes
 void end_all_process() { // if an issue arose during execution, delete the PCB linked list and free all memory
     while (head != NULL) {
         mem_delete_script(head->start, head->length); //delete script code from shell mem

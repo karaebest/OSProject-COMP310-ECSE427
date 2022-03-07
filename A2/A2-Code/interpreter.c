@@ -76,6 +76,7 @@ int interpreter(char* command_args[], int args_size){
 	
 	}else if(strcmp(command_args[0], "exec")==0){  
 		if(args_size < 3 || args_size > 5) return badcommand();
+		// check for duplicate filenames
 		else if (args_size == 4) {
 			if (strcmp(command_args[1], command_args[2]) == 0) {
 				return badcommandSameFileName();
