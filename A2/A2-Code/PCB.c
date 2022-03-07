@@ -23,7 +23,7 @@ static PCB_t* head = NULL;//pointer to head of ready queue
 int end_process();
 int run_process();
 void end_all_process();
-void promote_process(int);
+void promote_process(int, int);
 void age_all_process();
 
 int scheduler(int len, int start, int multi, char* policy){ //begin process (append to end of ready queue), return pid
@@ -125,6 +125,7 @@ int run_process(char* policy){
         }
     }
     else if (strcmp(policy, "AGING") == 0) {
+        int flag = 0; // flag to know if need to move head node to tail
         while (head != NULL) {
             int minestimate = -1;
             PCB_t *minjob = head;
@@ -137,10 +138,12 @@ int run_process(char* policy){
                 current = current->next;
             }
             if (minjob != head) {
-                promote_process(minjob->pid); // promote job
+                promote_process(minjob->pid, flag); // promote job
+                flag++;
             }
             int diff = (head->length) - (head->counter);
             if (diff > 0){ // run 1 instruction
+                flag++;
                 errCode = parseInput(mem_get_value(NULL, head->start+head->counter));
                 if (errCode != 0) { // exit upon error
                     end_all_process();
@@ -148,26 +151,28 @@ int run_process(char* policy){
                 }
                 head->counter++;
             }
+            age_all_process(); // decrease estimate by 1 for every process after head
             if (diff == 1) { // if no more instructions, end process
                 end_process(head->pid);
             }
-            age_all_process(); // decrease estimate by 1 for every process after head
         }
     }
     return errCode;
 }
 
 // helper function promote a process, and put head at the end of queue
-void promote_process(int pid) {
-    // put head process to last
-    PCB_t* last = head;
-    while (last->next!= NULL) {
-        last = last->next;
+void promote_process(int pid, int flag) {
+    if (flag != 0) { // don't move head to tail if there have been no promotions and no instructions executed yet
+        // put head process to last
+        PCB_t* last = head;
+        while (last->next!= NULL) {
+            last = last->next;
+        }
+        PCB_t* temp = head->next;
+        last->next = head;
+        head->next = NULL;
+        head = temp;
     }
-    PCB_t* temp = head->next;
-    last->next = head;
-    head->next = NULL;
-    head = temp;
     // promote other process to head
     if (head->pid != pid) {
         PCB_t* previous = head;
@@ -187,7 +192,9 @@ void age_all_process() {
     if (head != NULL) {
         PCB_t* current = head->next;
         while (current != NULL) {
+            // printf("old pid: %d, estimate: %d\n", current->pid, current->estimate);
             if (current->estimate > 0) current->estimate--; // decrease if estimate is nonzero
+            // printf("new pid: %d, estimate: %d\n", current->pid, current->estimate);
             current = current->next;
         }
     }
@@ -198,7 +205,6 @@ int end_process(int pid) //no need to check for empty linked list because will n
 {
     // if deleting the head node
     if(head->pid==pid){
-        mem_delete_script(head->start, head->length); //delete script code from shell mem
         if (head->next != NULL) {
             PCB_t* next_p = head->next;
             free(head);
@@ -218,7 +224,6 @@ int end_process(int pid) //no need to check for empty linked list because will n
             current = current->next;
         }
         previous->next = current->next;
-        mem_delete_script(current->start, current->length); //delete script code from shell mem
         free(current);
         return 0;
     }
@@ -228,7 +233,6 @@ int end_process(int pid) //no need to check for empty linked list because will n
 // helper function to end all processes
 void end_all_process() { // if an issue arose during execution, delete the PCB linked list and free all memory
     while (head != NULL) {
-        mem_delete_script(head->start, head->length); //delete script code from shell mem
         PCB_t* next_p = head->next;
         free(head);
         head = next_p;

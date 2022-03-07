@@ -84,12 +84,3 @@ char *mem_get_value(char *var_in, int index_in) { //if var_in = NULL, return val
 // 	}
 // 	return -1;
 // }
-
-void mem_delete_script(int start, int length){
-
-	for(int i=start; i<start+length; i++){
-		shellmemory[i].var = "none";
-		shellmemory[i].value = "none";
-	}
-
-}
