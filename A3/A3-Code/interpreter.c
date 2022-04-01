@@ -99,6 +99,8 @@ quit			Exits / terminates the shell with “Bye!”\n \
 set VAR STRING		Assigns a value to shell memory\n \
 print VAR		Displays the STRING assigned to VAR\n \
 run SCRIPT.TXT		Executes the file SCRIPT.TXT\n \
+echo STRING			Displays STRING\n \
+my_ls			Lists all the files in the current directory\n \
 resetmem		Deletes the content of the variable store\n";
 	printf("%s\n", help_string);
 	return 0;
