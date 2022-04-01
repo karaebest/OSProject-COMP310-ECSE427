@@ -19,6 +19,7 @@ int print(char* var);
 int run(char* script, char* policy, int multi);
 int my_ls();
 int echo(char* var);
+int resetmem();
 
 int interpreter(char* command_args[], int args_size){
 	int i;
@@ -67,7 +68,7 @@ int interpreter(char* command_args[], int args_size){
 		return run(command_args[1], "FCFS", 0); 
 	
 	} else if (strcmp(command_args[0], "my_ls")==0) {
-		if (args_size > 2) return badcommand();
+		if (args_size != 1) return badcommand();
 		return my_ls();
 	
 	}else if (strcmp(command_args[0], "echo")==0) {
@@ -76,25 +77,16 @@ int interpreter(char* command_args[], int args_size){
 	
 	}else if(strcmp(command_args[0], "exec")==0){  
 		if(args_size < 3 || args_size > 5) return badcommand();
-		// check for duplicate filenames
-		else if (args_size == 4) {
-			if (strcmp(command_args[1], command_args[2]) == 0) {
-				return badcommandSameFileName();
-			}
-		}
-		else if(args_size == 5) {
-			if (strcmp(command_args[1], command_args[2]) == 0 
-					|| strcmp(command_args[2], command_args[3]) == 0 
-					|| strcmp(command_args[1], command_args[3]) == 0) {
-				return badcommandSameFileName();
-			}
-		}
+
 		for(int i = 1; i<args_size-1; i++){
 			if(i==args_size-2) return run(command_args[i], command_args[args_size-1], 0);
 			run(command_args[i], command_args[args_size-1], 1);
 		}
 		return 0;
 		
+	} else if (strcmp(command_args[0], "resetmem")==0) {
+		if (args_size != 1) return badcommand();
+		return resetmem();
 	}
 	else return badcommand();
 }
@@ -106,13 +98,15 @@ help			Displays all the commands\n \
 quit			Exits / terminates the shell with “Bye!”\n \
 set VAR STRING		Assigns a value to shell memory\n \
 print VAR		Displays the STRING assigned to VAR\n \
-run SCRIPT.TXT		Executes the file SCRIPT.TXT\n ";
+run SCRIPT.TXT		Executes the file SCRIPT.TXT\n \
+resetmem		Deletes the content of the variable store\n";
 	printf("%s\n", help_string);
 	return 0;
 }
 
 int quit(){
 	printf("%s\n", "Bye!");
+	system("exec rm -r backing_store");
 	exit(0);
 }
 
@@ -144,11 +138,11 @@ int set(char* var, char* value){
 	// strcat(buffer, link);
 	// strcat(buffer, value);
 
-	return mem_set_value(var, value, -1);
+	return mem_variable_set_value(var, value, -1);
 }
 
 int print(char* var){
-	printf("%s\n", mem_get_value(var, 0)); 
+	printf("%s\n", mem_variable_get_value(var, 0)); 
 	return 0;
 }
 
@@ -169,7 +163,7 @@ int run(char* script, char* policy, int multi){
 	fgets(line,99,p);
 	while(1){
 		length++;
-		index = mem_set_value(name_script, line, index) + 1;
+		index = mem_frame_set_value(name_script, line, index) + 1;
 		memset(line, 0, sizeof(line));
 		if(feof(p)){
 			break;
@@ -192,10 +186,15 @@ int my_ls(){
 int echo(char* var){
 	if(var[0] == '$'){
 		var++;
-		printf("%s\n", mem_get_value(var, 0)); 
+		printf("%s\n", mem_variable_get_value(var, 0)); 
 	}else{
 		printf("%s\n", var); 
 	}
 	return 0; 
+}
+
+int resetmem() {
+	mem_reset_variable();
+	return 0;
 }
 

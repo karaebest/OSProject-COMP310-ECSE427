@@ -3,14 +3,18 @@
 #include <stdlib.h>
 #include <string.h> 
 #include <stdbool.h>
+#include <dirent.h>
+#include <errno.h>
+#include <sys/stat.h>
 
 #include "interpreter.h"
 #include "shellmemory.h"
 #include "PCB.h"
 
+#define MAX_USER_INPUT 1000
 
-int MAX_USER_INPUT = 1000;
 int parseInput(char ui[]);
+int back_init();
 
 int main(int argc, char *argv[]) {
 
@@ -27,6 +31,10 @@ int main(int argc, char *argv[]) {
 	
 	//init shell memory
 	mem_init();
+	//init backing store
+	errorCode = back_init();
+	
+	if (errorCode == -1) exit(99); // ignore all other errors
 
 	while(1) {						
 		printf("%c ",prompt);
@@ -85,4 +93,21 @@ int parseInput(char ui[]) {
 	errorCode = interpreter(words, w);
 
 	return errorCode;
+}
+
+int back_init() {
+	errno = 0;
+	// create directory
+	int res = mkdir("backing_store", 0700);
+	if (res == -1) {
+		if (errno == EEXIST) {
+			system("exec rm -r backing_store");
+			back_init();
+		}
+		else {
+			printf("Cannot create backing store\n");
+			return -1;
+		}
+	}
+	return 0;
 }

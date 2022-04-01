@@ -1,2 +1,1 @@
-
 int parseInput(char ui[]);

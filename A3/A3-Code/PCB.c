@@ -66,7 +66,7 @@ int run_process(char* policy){
     if (strcmp(policy, "FCFS") == 0) { // first come first serve policy
         while ((head != NULL)) {
             while((head->counter)!=(head->length)){ // run all instructions of script
-                errCode = parseInput(mem_get_value(NULL, head->start+head->counter));
+                errCode = parseInput(mem_frame_get_value(NULL, head->start+head->counter));
                 if (errCode != 0) { // exit upon error
                     end_all_process();
                     return errCode;
@@ -90,7 +90,7 @@ int run_process(char* policy){
                 diff = 2;
             }
             for (int i=0; i < diff; i++) {
-                errCode = parseInput(mem_get_value(NULL, current->start+current->counter));
+                errCode = parseInput(mem_frame_get_value(NULL, current->start+current->counter));
                 if (errCode != 0) { // exit upon error
                     end_all_process();
                     return errCode;
@@ -114,7 +114,7 @@ int run_process(char* policy){
                 current = current->next;
             }
             while ((minjob->counter) != (minjob->length)){ // run all instructions of script
-                errCode = parseInput(mem_get_value(NULL, minjob->start+minjob->counter));
+                errCode = parseInput(mem_frame_get_value(NULL, minjob->start+minjob->counter));
                 if (errCode != 0) { // exit upon error
                     end_all_process();
                     return errCode;
@@ -144,7 +144,7 @@ int run_process(char* policy){
             int diff = (head->length) - (head->counter);
             if (diff > 0){ // run 1 instruction
                 flag++;
-                errCode = parseInput(mem_get_value(NULL, head->start+head->counter));
+                errCode = parseInput(mem_frame_get_value(NULL, head->start+head->counter));
                 if (errCode != 0) { // exit upon error
                     end_all_process();
                     return errCode;
