@@ -3,8 +3,8 @@
 #include<stdio.h>
 
 // frame_size needs to be a multiple of 3
-#define frame_size 900
-#define variable_size 100
+#define frame_size FSIZE
+#define variable_size VSIZE
 
 struct memory_struct{
 	char *var;
@@ -18,7 +18,7 @@ struct memory_struct variablestore[variable_size];
 
 void mem_reset_variable() {
 	int i;
-	for (i=0; i<100; i++) {		
+	for (i=0; i<variable_size; i++) {		
 		variablestore[i].var = "none";
 		variablestore[i].value = "none";
 	}
@@ -26,7 +26,7 @@ void mem_reset_variable() {
 
 void mem_init(){
 	int i;
-	for (i=0; i<900; i++) {		
+	for (i=0; i<frame_size; i++) {		
 		framestore[i].var = "none";
 		framestore[i].value = "none";
 	}

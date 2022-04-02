@@ -6,6 +6,9 @@
 #include "shell.h"
 #include "PCB.h"
 
+#define frame_size FSIZE
+#define var_size VSIZE
+
 int MAX_ARGS_SIZE = 7;
 
 int help();
@@ -94,15 +97,31 @@ int interpreter(char* command_args[], int args_size){
 int help(){
 
 	char help_string[] = "COMMAND			DESCRIPTION\n \
-help			Displays all the commands\n \
-quit			Exits / terminates the shell with “Bye!”\n \
-set VAR STRING		Assigns a value to shell memory\n \
-print VAR		Displays the STRING assigned to VAR\n \
-run SCRIPT.TXT		Executes the file SCRIPT.TXT\n \
-echo STRING		Displays STRING\n \
-my_ls			Lists all the files in the current directory\n \
-resetmem		Deletes the content of the variable store\n";
-	printf("%s\n", help_string);
+	help			Displays all the commands\n \
+	quit			Exits / terminates the shell with “Bye!”\n \
+	set VAR STRING		Assigns a value to shell memory\n \
+	print VAR		Displays the STRING assigned to VAR\n \
+	run SCRIPT.TXT		Executes the file SCRIPT.TXT\n \
+	echo STRING		Displays STRING\n \
+	my_ls			Lists all the files in the current directory\n \
+	resetmem		Deletes the content of the variable store\n	\
+	Frame Store Size = ";
+
+	char buffer[1000];
+	char *numF;
+	char *numV;
+	strcpy(buffer, help_string);
+	asprintf(&numF, "%d", frame_size);
+	strcat(buffer, numF);
+	strcat(buffer, "; Variable Store Size = ");
+	asprintf(&numV, "%d", var_size);
+	strcat(buffer, numV);
+	strcat(buffer, "\n");
+
+
+	printf("%s\n", buffer);
+	free(numF);
+	free(numV);
 	return 0;
 }
 
@@ -131,6 +150,8 @@ int badcommandSameFileName(){
 	printf("%s\n", "Bad command: Same file name");
 	return 4;
 }
+
+
 
 int set(char* var, char* value){
 
