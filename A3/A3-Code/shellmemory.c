@@ -38,7 +38,7 @@ int mem_frame_set_value(char *var_in, char *value_in, int index) {
 	
 	if(index==-1){
 		int i;
-		for (i=0; i<1000; i++){ 
+		for (i=0; i<frame_size; i++){ 
 			if (strcmp(framestore[i].var, var_in) == 0){
 				framestore[i].value = strdup(value_in);
 				return i;
@@ -46,7 +46,7 @@ int mem_frame_set_value(char *var_in, char *value_in, int index) {
 		}
 
 		//Value does not exist, need to find a free spot.
-		for (i=0; i<1000; i++){
+		for (i=0; i<frame_size; i++){
 			if (strcmp(framestore[i].value, "none") == 0){ //must check value instead of var since script lines after first have var = "none"
 				framestore[i].var = strdup(var_in);
 				framestore[i].value = strdup(value_in);
@@ -75,7 +75,7 @@ int mem_variable_set_value(char *var_in, char *value_in, int index) {
 	
 	if(index==-1){
 		int i;
-		for (i=0; i<1000; i++){ 
+		for (i=0; i<variable_size; i++){ 
 			if (strcmp(variablestore[i].var, var_in) == 0){
 				variablestore[i].value = strdup(value_in);
 				return i;
@@ -83,7 +83,7 @@ int mem_variable_set_value(char *var_in, char *value_in, int index) {
 		}
 
 		//Value does not exist, need to find a free spot.
-		for (i=0; i<1000; i++){
+		for (i=0; i<variable_size; i++){
 			if (strcmp(variablestore[i].value, "none") == 0){ //must check value instead of var since script lines after first have var = "none"
 				variablestore[i].var = strdup(var_in);
 				variablestore[i].value = strdup(value_in);
@@ -113,8 +113,8 @@ char *mem_frame_get_value(char *var_in, int index_in) { //if var_in = NULL, retu
 	if(var_in == NULL){
 		return strdup(framestore[index_in].value); //add error message here if index_in is outOfBounds
 	}
-	for (int i=0; i<1000; i++){
-		if(i+index_in>1000){return "Index out of bounds";} 
+	for (int i=0; i<frame_size; i++){
+		if(i+index_in>frame_size){return "Index out of bounds";} 
 		if (strcmp(framestore[i].var, var_in) == 0){
 			return strdup(framestore[i+index_in].value);
 		} 
@@ -128,8 +128,8 @@ char *mem_variable_get_value(char *var_in, int index_in) { //if var_in = NULL, r
 	if(var_in == NULL){
 		return strdup(variablestore[index_in].value); //add error message here if index_in is outOfBounds
 	}
-	for (int i=0; i<1000; i++){
-		if(i+index_in>1000){return "Index out of bounds";} 
+	for (int i=0; i<variable_size; i++){
+		if(i+index_in>variable_size){return "Index out of bounds";} 
 		if (strcmp(variablestore[i].var, var_in) == 0){
 			return strdup(variablestore[i+index_in].value);
 		} 
