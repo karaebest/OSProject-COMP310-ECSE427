@@ -33,6 +33,29 @@ void mem_init(){
 	mem_reset_variable();
 }
 
+// finds the next hole available in memory and loads n lines from file p with offset of o lines
+int mem_frame_load_next(FILE *p, int o, int n) {
+	// go through offset of o lines
+	for (int i = 0; i < o; i++) {
+		char line[100];
+		fgets(line,99,p);
+	}
+	for (int i = 0; i < frame_size; i+=3) {
+		// if hole found
+		if (strcmp(framestore[i].value, "none") == 0) {
+			char line[100];
+			// load n lines
+			for (int j = 0; j < n; j++) {
+				fgets(line,99,p);
+				framestore[i + j].value = strdup(line);
+				memset(line, 0, sizeof(line));
+			}
+			return i;
+		}
+	}
+	return -1; //if not set (shell mem full)
+}
+
 // Set key value pair at index (unless index == -1, then stored at next free space) in frame store
 int mem_frame_set_value(char *var_in, char *value_in, int index) { 
 	
