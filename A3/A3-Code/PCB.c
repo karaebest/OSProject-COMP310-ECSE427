@@ -15,8 +15,6 @@ typedef struct PCB_struct{
      
 } PCB_t;
 
-//TO DO --> change variables in h files
-//TO DO --> add error messages
 
 static PCB_t* head = NULL;//pointer to head of ready queue
 
@@ -55,7 +53,7 @@ int scheduler(int len, int start, int multi, char* policy){ //begin process (app
         current->next->estimate = len;
         current->next->next = NULL;
     }
-    if(multi==1) return 0;
+    if(multi==1) return 0;          //once last script has been loaded into memory, can begin running the processes
 
     return run_process(policy);
 }

@@ -200,7 +200,7 @@ int run(char* script, char* policy, int multi){
 	fclose(p);
 	free(name_script);
 	int start = index - length;
-	int errCode = scheduler(length, start, multi, policy); //TO DO -> change null to it at scheduler call
+	int errCode = scheduler(length, start, multi, policy); 
 	return errCode;
 }
 
