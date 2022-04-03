@@ -65,7 +65,7 @@ int interpreter(char* command_args[], int args_size){
 	
 	} else if (strcmp(command_args[0], "run")==0) {
 		if (args_size != 2) return badcommand(); 
-		return run(command_args[1], "FCFS", 0); 
+		return run(command_args[1], "FCFS", 0);
 	
 	} else if (strcmp(command_args[0], "my_ls")==0) {
 		if (args_size != 1) return badcommand();
@@ -163,12 +163,11 @@ int run(char* script, char* policy, int multi){
 	}
 
 	int length = 0;
-	int index = -1; 
 
 	fgets(line,99,p);
+	// count script length
 	while(1){
 		length++;
-		index = mem_frame_set_value(name_script, line, index) + 1;
 		memset(line, 0, sizeof(line));
 		if(feof(p)){
 			break;
@@ -178,8 +177,8 @@ int run(char* script, char* policy, int multi){
 
 	fclose(p);
 	free(name_script);
-	int start = index - length;
-	int errCode = scheduler(length, start, multi, policy); //TO DO -> change null to it at scheduler call
+	// call scheduler for this script
+	int errCode = scheduler(script, length, multi, policy);
 	return errCode;
 }
 
