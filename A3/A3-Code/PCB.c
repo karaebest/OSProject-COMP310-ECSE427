@@ -46,7 +46,7 @@ int scheduler(char* name, int len, int multi, char* policy){ //begin process (ap
         head->estimate = len;
         head->pagenumber = 0;
         head->next = NULL;
-        for(i=0; i<34; i++){
+        for(i=0; i<34; i++){                //initialize all spots in pagetable to -1
             head->pagetable[i] = -1;
         }
         load_page(head, 0);       //load first 2 pages 
@@ -175,19 +175,16 @@ int load_page(PCB_t *current, int page_number){
 // }
 
 void page_fault(PCB_t *process){
-    PCB_t *current;
-    int i;
-    int j = 0;
+    
     int index;
 
     if(load_page(process, process->pagenumber) == -1){
-        printf("%d\n %s\n", process->counter, process->script);
 
-        index = 6;
+        index = 6;          
         char* evict = "Page fault! Victim page contents:\n";
         char buffer[1000];
         strcpy(buffer, evict);
-        for(i=0; i<3; i++){
+        for(int i=0; i<3; i++){
             if(strcmp(mem_frame_get_line(index+i), "none")!=0){
                 strcat(buffer, mem_frame_get_line(index+i));
                 strcat(buffer, "\n");       // might need to add extra \ before newline
@@ -196,7 +193,7 @@ void page_fault(PCB_t *process){
         strcat(buffer, "End of victim page contents.\n");
         printf("%s\n", buffer);
         mem_frame_delete(index);            //delete frame from store
-        //process->next->pagetable[0] = -1;         //reflect in page table, going to need to figure out because 
+        //process->next->pagetable[0] = -1;          
         load_page(process, process->pagenumber);
     }
     
