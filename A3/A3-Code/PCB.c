@@ -28,6 +28,8 @@ void load_processes();
 void end_all_process();
 void promote_process(int, int);
 void age_all_process();
+int load_page(PCB_t *current, int page_number);
+void page_fault(PCB_t *process);
 
 int scheduler(char* name, int len, int multi, char* policy){ //begin process (append to end of ready queue), return pid
     //for multi FCFS: add bool multi as arg, if 1 return w/o running after adding to queue, if 0 run processes after adding
@@ -188,12 +190,12 @@ void page_fault(PCB_t *process){
         char buffer[1000];
         strcpy(buffer, evict);
         for(i=0; i<3; i++){
-            if(strcmp(mem_get_frame(index+i), "none")!=0){
-                strcat(buffer, mem_get_frame(index+i));
+            if(strcmp(mem_frame_get_line(index+i), "none")!=0){
+                strcat(buffer, mem_frame_get_line(index+i));
                 strcat(buffer, "\n");       // might need to add extra \ before newline
             }
         }
-        strcat(buffer, "End of victim page contents.");
+        strcat(buffer, "End of victim page contents.\n");
         printf("%s\n", buffer);
         mem_frame_delete(index);            //delete frame from store
         current->pagetable[j] = -1;         //reflect in page table
