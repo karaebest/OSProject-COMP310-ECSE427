@@ -225,8 +225,8 @@ int run_process(char* policy){
                     if(k==0) break;
                     back = head;
                     current->next = back;
-                    head = head->next;
                     back->next = NULL;
+                    head = head->next;
                     fault = 1;
                     break;
                 }
@@ -261,20 +261,36 @@ int run_process(char* policy){
             for (int i=0; i < diff; i++) {
                 if(current->pagetable[current->pagenumber] = -1){
                     page_fault(current);
-                    k=0;
-                    currentTemp = current;          
-                    while(currentTemp->next != NULL){       //send to back and move to next process
-                        k++;
-                        currentTemp = currentTemp->next;
-                    }
-                    if(k == 0) break;       //if there is only 1 process in ready queue then no need to rearrange
-                    back = current;
-                    if (current->next == NULL) current = head; // if at end of linked list, go back to head
-                    else current = current->next; // go to next node
-                    currentTemp->next = back;
-                    back->next = NULL;
                     fault = 1;
-                    break;
+                    if(current->next == NULL) break;            //if already at the end of the ready queue no rearranging needed
+                    if(current == head){  
+                        currentTemp = head;                   
+                        currentTemp = currentTemp->next;
+                        current->next = NULL;               
+                        head = currentTemp;
+                        while(currentTemp->next != NULL){       //send to back and move to next process
+                            currentTemp = currentTemp->next;
+                        }
+                        currentTemp->next = current;
+                        current = head->next;                   // go to next node
+                        break;
+                    }
+                    else{                                       //if in middle of queue
+                        currentTemp = head;
+                        while(currentTemp->next != current){    //point node before current to one after current
+                            currentTemp = currentTemp->next;
+                        }
+                        currentTemp->next = current->next;
+                        back = currentTemp;
+                        current->next = NULL;
+                        while(back->next != NULL){              //send current to back and move to next process
+                            back = back->next;
+                        }    
+                        back->next = current;
+                        current = currentTemp->next;
+                        break;
+                    }
+                    
                 }
                 int index = current->pagetable[current->pagenumber] + current->counter % 3; // index is index pointed to by page table + offset from the counter
                 errCode = parseInput(mem_frame_get_value(NULL, index));
