@@ -45,9 +45,10 @@ int mem_frame_load_next(FILE *p, int o, int n) {
 		if (strcmp(framestore[i].value, "none") == 0) {
 			char line[100];
 			// load n lines
-			for (int j = 0; j < 3; j++) {						
+			for (int j = 0; j < n; j++) {						
 				fgets(line,99,p);
 				framestore[i + j].value = strdup(line);
+				printf("%d\n %s\n", i+j, framestore[i + j].value);
 				memset(line, 0, sizeof(line));
 			}
 

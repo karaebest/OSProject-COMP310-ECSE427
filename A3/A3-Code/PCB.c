@@ -49,7 +49,7 @@ int scheduler(char* name, int len, int multi, char* policy){ //begin process (ap
             head->pagetable[i] = -1;
         }
         load_page(head, 0);       //load first 2 pages 
-        load_page(head, 1);
+        if(head->length>3) load_page(head, 1);
     }else{
         PCB_t *current = head;
     
@@ -72,7 +72,8 @@ int scheduler(char* name, int len, int multi, char* policy){ //begin process (ap
             current->next->pagetable[i] = -1;
         }
         load_page(current->next, 0);   //load first 2 pages
-        load_page(current->next, 1);
+        if(current->next->length > 3) load_page(current->next, 1);
+        
     }
     
     if(multi==1) return 0;
@@ -80,11 +81,11 @@ int scheduler(char* name, int len, int multi, char* policy){ //begin process (ap
     return run_process(policy);
 }
  
-int load_page(PCB_t *current, int page_number){     //if returns -1, 
+int load_page(PCB_t *current, int page_number){ 
       
     int lines = 3;
-    if (current->length - current->counter < 3) {
-            lines = current->length - current->counter;
+    if (current->length - (page_number*3) < 3) {
+        lines = current->length - (page_number*3);
     }
     char* name_script = malloc(sizeof(current->script));
     name_script = strncpy(name_script, current->script, sizeof(current->script));
@@ -98,8 +99,10 @@ int load_page(PCB_t *current, int page_number){     //if returns -1,
     }
 
     // load page at next free hole in memory.
-    int index = mem_frame_load_next(p, current->counter, lines);
+    int index = mem_frame_load_next(p, (page_number*3), lines);
     if (index == -1) { // no more free memory
+        fclose(p);
+        free(name_script);
         return index;
     }
     current->pagetable[page_number] = index; // here, index is the framestore index where the page is saved
@@ -110,65 +113,65 @@ int load_page(PCB_t *current, int page_number){     //if returns -1,
 }
 
 // load program pages alternatingly into the frame store. each page is 3 lines
-void load_processes() {
-    PCB_t *current = head;
-    int max = 0;
-    // find script with the most lines, and loop for number of lines / 3
-    while (current != NULL) {
-        int n = (current->length + 2) / 3; // round up
-        if (n > max) {
-            max = n;
-        }
-        current = current->next;
-    }
-    // loop max times to go through all pages of all scripts
-    for (int i = 0; i < max; i++) {
-        current = head; // go back to head for next pages
+// void load_processes() {
+//     PCB_t *current = head;
+//     int max = 0;
+//     // find script with the most lines, and loop for number of lines / 3
+//     while (current != NULL) {
+//         int n = (current->length + 2) / 3; // round up
+//         if (n > max) {
+//             max = n;
+//         }
+//         current = current->next;
+//     }
+//     // loop max times to go through all pages of all scripts
+//     for (int i = 0; i < max; i++) {
+//         current = head; // go back to head for next pages
         
-        // for each script, load the next 3 lines into memory at the next free hole
-        while (current != NULL ) {
-            int loads = 3;
-            // if script is finished, go to next
-            if (current->length == current->counter) {
-                current = current->next;
-                continue;
-            }
-            // if less than 3 lines left, only loop for what's left
-            else if (current->length - current->counter < 3) {
-                loads = current->length - current->counter;
-            }
-            char* name_script = malloc(sizeof(current->script));
-            name_script = strncpy(name_script, current->script, sizeof(current->script));
-            char path[100];
-            sprintf(path, "backing_store/%s", name_script);
+//         // for each script, load the next 3 lines into memory at the next free hole
+//         while (current != NULL ) {
+//             int loads = 3;
+//             // if script is finished, go to next
+//             if (current->length == current->counter) {
+//                 current = current->next;
+//                 continue;
+//             }
+//             // if less than 3 lines left, only loop for what's left
+//             else if (current->length - current->counter < 3) {
+//                 loads = current->length - current->counter;
+//             }
+//             char* name_script = malloc(sizeof(current->script));
+//             name_script = strncpy(name_script, current->script, sizeof(current->script));
+//             char path[100];
+//             sprintf(path, "backing_store/%s", name_script);
 
-            FILE *p = fopen(path,"rt");
-            if(p == NULL){ // file cannot be opened
-                end_all_process();
-                exit(99);
-            }
+//             FILE *p = fopen(path,"rt");
+//             if(p == NULL){ // file cannot be opened
+//                 end_all_process();
+//                 exit(99);
+//             }
 
-            // load page at next free hole in memory.
-            int index = mem_frame_load_next(p, current->counter, loads);
-            if (index == -1) { // no more free memory
-                end_all_process();
-                exit(99);
-            }
-            current->pagetable[i] = index; // here, index is the framestore index where the page is saved
+//             // load page at next free hole in memory.
+//             int index = mem_frame_load_next(p, current->counter, loads);
+//             if (index == -1) { // no more free memory
+//                 end_all_process();
+//                 exit(99);
+//             }
+//             current->pagetable[i] = index; // here, index is the framestore index where the page is saved
 
-            fclose(p);
-            free(name_script);
-            current->counter += loads;
-            current = current->next;
-        }
-    }
-    // reset counters to 0
-    current = head;
-    while (current != NULL) {
-        current->counter = 0;
-        current = current->next;
-    }
-}
+//             fclose(p);
+//             free(name_script);
+//             current->counter += loads;
+//             current = current->next;
+//         }
+//     }
+//     // reset counters to 0
+//     current = head;
+//     while (current != NULL) {
+//         current->counter = 0;
+//         current = current->next;
+//     }
+// }
 
 void page_fault(PCB_t *process){
     PCB_t *current;
@@ -176,16 +179,10 @@ void page_fault(PCB_t *process){
     int j = 0;
     int index;
 
-    if(load_page(process, process->pagenumber)==-1){
-        current = head;
-        for(i=0; i<5; i++){             //choose "random" process
-            current = current->next;
-            if(current==NULL) current = head;
-        }  
-        for(i=0; i<10; i++){            //choose "random" frame from process
-            if(current->pagetable[++j]==-1) j = 0;
-        }
-        index = current->pagetable[j];
+    if(load_page(process, process->pagenumber) == -1){
+        printf("%d\n %s\n", process->counter, process->script);
+
+        index = 6;
         char* evict = "Page fault! Victim page contents:\n";
         char buffer[1000];
         strcpy(buffer, evict);
@@ -198,7 +195,7 @@ void page_fault(PCB_t *process){
         strcat(buffer, "End of victim page contents.\n");
         printf("%s\n", buffer);
         mem_frame_delete(index);            //delete frame from store
-        current->pagetable[j] = -1;         //reflect in page table
+        //process->next->pagetable[0] = -1;         //reflect in page table, going to need to figure out because 
         load_page(process, process->pagenumber);
     }
     
@@ -259,7 +256,7 @@ int run_process(char* policy){
                 diff = 2;
             }
             for (int i=0; i < diff; i++) {
-                if(current->pagetable[current->pagenumber] = -1){
+                if(current->pagetable[current->pagenumber] == -1){   //page fault
                     page_fault(current);
                     fault = 1;
                     if(current->next == NULL) break;            //if already at the end of the ready queue no rearranging needed
