@@ -5,6 +5,8 @@
 #include "shellmemory.h"
 #include "shell.h"
 
+#define frame_size FSIZE
+
 typedef struct PCB_struct{
     char* script;
     int pid;
@@ -20,7 +22,7 @@ typedef struct PCB_struct{
 
 
 static PCB_t* head = NULL;//pointer to head of ready queue
-static int storepages[]
+static int *framestorepages[frame_size/3]; //holds array of pointers to pagetable locations of pages currently in framestore (index*3 = frame number)
 
 
 int end_process();
@@ -101,13 +103,13 @@ int load_page(PCB_t *current, int page_number){
 
     // load page at next free hole in memory.
     int index = mem_frame_load_next(p, (page_number*3), lines);
-    if (index == -1) { // no more free memory
+    if (index == -1) {              // no more free memory
         fclose(p);
         free(name_script);
         return index;
     }
     current->pagetable[page_number] = index; // here, index is the framestore index where the page is saved
-
+    framestorepages[index/3] = &(current->pagetable[page_number]);      
     fclose(p);
     free(name_script);
     return 0;
@@ -178,9 +180,9 @@ void page_fault(PCB_t *process){
     
     int index;
 
-    if(load_page(process, process->pagenumber) == -1){
+    if(load_page(process, process->pagenumber) == -1){      //if frame store is full then evict frame
 
-        index = 6;          
+        //TO ADD HERE: finding           
         char* evict = "Page fault! Victim page contents:\n";
         char buffer[1000];
         strcpy(buffer, evict);
@@ -193,7 +195,9 @@ void page_fault(PCB_t *process){
         strcat(buffer, "End of victim page contents.\n");
         printf("%s\n", buffer);
         mem_frame_delete(index);            //delete frame from store
-        //process->next->pagetable[0] = -1;          
+        if(framestorepages[index/3]!=NULL){     //if process has not already been ended and destroyed, reflect frame deletion in its page table
+            *framestorepages[index/3] = -1;
+        }
         load_page(process, process->pagenumber);
     }
     
@@ -203,8 +207,8 @@ int run_process(char* policy){
     int errCode;
     int fault = 0;
     PCB_t *current = head;
-    PCB_t *back;
-    PCB_t *currentTemp;
+    PCB_t *back = NULL;
+    PCB_t *currentTemp = NULL;
     int k;
     if (strcmp(policy, "FCFS") == 0) { // first come first serve policy
         while ((head != NULL)) {
