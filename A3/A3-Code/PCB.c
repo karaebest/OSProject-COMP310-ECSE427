@@ -14,13 +14,14 @@ typedef struct PCB_struct{
     int estimate; //estimate length for aging
     int pagenumber; // current page number to indentify in pagetable
     int pagetable[34]; // pagetable holding framstore index of each page, assumes script will be no longer than 100 lines (as stated on ed)
-    // TODO: change page table size. Assume each script will have no more than 30 lines for now
     struct PCB_struct* next; //pointer to next PCB
      
 } PCB_t;
 
 
 static PCB_t* head = NULL;//pointer to head of ready queue
+static int storepages[]
+
 
 int end_process();
 int run_process();
@@ -211,21 +212,23 @@ int run_process(char* policy){
     if (strcmp(policy, "FCFS") == 0) { // first come first serve policy
         while ((head != NULL)) {
             while((head->counter)!=(head->length)){ // run all instructions of script
-                if(head->pagetable[head->pagenumber] = -1){
+                if(head->pagetable[head->pagenumber] == -1){
                     page_fault(head);
                     current = head;
-                    k = 0;
-                    while(current->next != NULL){       //send to back and move to next process
-                        k++;
-                        current = current->next;
-                    }
-                    if(k==0) break;
-                    back = head;
-                    current->next = back;
-                    back->next = NULL;
-                    head = head->next;
                     fault = 1;
-                    break;
+                    if(head->next == NULL) break;            //if already at the end of the ready queue no rearranging needed
+                    else{                    //if at head of queue
+                        currentTemp = head;                   
+                        currentTemp = currentTemp->next;
+                        current->next = NULL;               
+                        head = currentTemp;
+                        while(currentTemp->next != NULL){       //send to back and move to next process
+                            currentTemp = currentTemp->next;
+                        }
+                        currentTemp->next = current;
+                        break;
+                    }
+                    
                 }
                 int index = head->pagetable[head->pagenumber] + head->counter % 3; // index is index pointed to by page table + offset from the counter
                 errCode = parseInput(mem_frame_get_value(NULL, index));
@@ -320,21 +323,36 @@ int run_process(char* policy){
                 current = current->next;
             }
             while ((minjob->counter) != (minjob->length)){ // run all instructions of script
-                if(minjob->pagetable[minjob->pagenumber] = -1){
+                if(minjob->pagetable[minjob->pagenumber] == -1){
                     page_fault(minjob);
-                    currentTemp = minjob;
-                    k = 0;
-                    while(currentTemp->next != NULL){       //send to back and move to next process
-                        k++;
-                        currentTemp = currentTemp->next;
-                    }
-                    if(k==0) break;
-                    back = minjob;
-                    currentTemp->next = back;
-                    minjob = minjob->next;
-                    back->next = NULL;
                     fault = 1;
-                    break;
+                    if(minjob->next == NULL) break;            //if already at the end of the ready queue no rearranging needed
+                    if(minjob == head){  
+                        currentTemp = head;                   
+                        currentTemp = currentTemp->next;
+                        minjob->next = NULL;               
+                        head = currentTemp;
+                        while(currentTemp->next != NULL){       //send to back and move to next process
+                            currentTemp = currentTemp->next;
+                        }
+                        currentTemp->next = minjob;
+                        minjob = head->next;                  // go to next node
+                        break;
+                    }
+                    else{                                       //if in middle of queue
+                        currentTemp = head;
+                        while(currentTemp->next != minjob){    //point node before current to one after current
+                            currentTemp = currentTemp->next;
+                        }
+                        currentTemp->next = minjob->next;
+                        back = currentTemp;
+                        minjob->next = NULL;
+                        while(back->next != NULL){              //send current to back and move to next process
+                            back = back->next;
+                        }    
+                        back->next = minjob;
+                        break;
+                    }
                 }
                 int index = minjob->pagetable[minjob->pagenumber] + minjob->counter % 3; // index is index pointed to by page table + offset from the counter
                 errCode = parseInput(mem_frame_get_value(NULL, index));
@@ -371,7 +389,7 @@ int run_process(char* policy){
             int diff = (head->length) - (head->counter);
             if (diff > 0){ // run 1 instruction
                 flag++;
-                if(head->pagetable[head->pagenumber] = -1){
+                if(head->pagetable[head->pagenumber] == -1){
                     //trigger page fault
                 }
                 int index = head->pagetable[head->pagenumber] + head->counter % 3; // index is index pointed to by page table + offset from the counter
