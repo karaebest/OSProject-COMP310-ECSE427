@@ -169,18 +169,35 @@ void load_processes() {
 }
 
 void page_fault(PCB_t *process){
-
     PCB_t *current;
+    int i;
+    int j = 0;
+    int index;
+
     if(load_page(process, process->pagenumber)==-1){
         current = head;
-        for(int i=0; i<5; i++){
-            
+        for(i=0; i<5; i++){             //choose "random" process
+            current = current->next;
+            if(current==NULL) current = head;
         }  
-        //choose random number between 0 and 10
-        //cycle through ready queue that number of times, then again randomly select from that frame table
-        //set to -1, delete frame from store
-        //load new page into 
-        
+        for(i=0; i<10; i++){            //choose "random" frame from process
+            if(current->pagetable[++j]==-1) j = 0;
+        }
+        index = current->pagetable[j];
+        char* evict = "Page fault! Victim page contents:\n";
+        char buffer[1000];
+        strcpy(buffer, evict);
+        for(i=0; i<3; i++){
+            if(strcmp(mem_get_frame(index+i), "none")!=0){
+                strcat(buffer, mem_get_frame(index+i));
+                strcat(buffer, "\n");       // might need to add extra \ before newline
+            }
+        }
+        strcat(buffer, "End of victim page contents.");
+        printf("%s\n", buffer);
+        mem_frame_delete(index);            //delete frame from store
+        current->pagetable[j] = -1;         //reflect in page table
+        load_page(process, process->pagenumber);
     }
     
 }

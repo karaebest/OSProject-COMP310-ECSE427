@@ -65,6 +65,10 @@ void mem_frame_delete(int index){
 	}
 }
 
+char* mem_frame_get_line(int index){
+	return strdup(framestore[index].value);
+}
+
 // Set key value pair at index (unless index == -1, then stored at next free space) in frame store
 int mem_frame_set_value(char *var_in, char *value_in, int index) { 
 	
