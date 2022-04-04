@@ -45,11 +45,12 @@ int mem_frame_load_next(FILE *p, int o, int n) {
 		if (strcmp(framestore[i].value, "none") == 0) {
 			char line[100];
 			// load n lines
-			for (int j = 0; j < n; j++) {
+			for (int j = 0; j < 3; j++) {						
 				fgets(line,99,p);
 				framestore[i + j].value = strdup(line);
 				memset(line, 0, sizeof(line));
 			}
+
 			return i;
 		}
 	}
@@ -134,7 +135,7 @@ int mem_variable_set_value(char *var_in, char *value_in, int index) {
 char *mem_frame_get_value(char *var_in, int index_in) { //if var_in = NULL, return value at index_in
 
 	if(var_in == NULL){
-		return strdup(framestore[index_in].value); //add error message here if index_in is outOfBounds
+		return strdup(framestore[index_in].value); 
 	}
 	for (int i=0; i<frame_size; i++){
 		if(i+index_in>frame_size){return "Index out of bounds";} 
@@ -149,7 +150,7 @@ char *mem_frame_get_value(char *var_in, int index_in) { //if var_in = NULL, retu
 char *mem_variable_get_value(char *var_in, int index_in) { //if var_in = NULL, return value at index_in
 
 	if(var_in == NULL){
-		return strdup(variablestore[index_in].value); //add error message here if index_in is outOfBounds
+		return strdup(variablestore[index_in].value); 
 	}
 	for (int i=0; i<variable_size; i++){
 		if(i+index_in>variable_size){return "Index out of bounds";} 
