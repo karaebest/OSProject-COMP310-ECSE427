@@ -168,10 +168,19 @@ void load_processes() {
     }
 }
 
-void page_fault(PCB_t *current){
+void page_fault(PCB_t *process){
 
-    if(load_page(current, current->pagenumber)==-1){        
-
+    PCB_t *current;
+    if(load_page(process, process->pagenumber)==-1){
+        current = head;
+        for(int i=0; i<5; i++){
+            
+        }  
+        //choose random number between 0 and 10
+        //cycle through ready queue that number of times, then again randomly select from that frame table
+        //set to -1, delete frame from store
+        //load new page into 
+        
     }
     
 }
@@ -310,7 +319,7 @@ int run_process(char* policy){
             fault = 0;
         }
     }
-    else if (strcmp(policy, "AGING") == 0) {
+    else if (strcmp(policy, "AGING") == 0) {        //TO DO: add page fault to aging
         int flag = 0; // flag to know if need to move head node to tail
         while (head != NULL) {
             int minestimate = -1;

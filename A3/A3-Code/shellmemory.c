@@ -57,6 +57,14 @@ int mem_frame_load_next(FILE *p, int o, int n) {
 	return -1; //if not set (shell mem full)
 }
 
+//deletes frame starting at specified index (index will always be multiple of 3 within frame store size)
+void mem_frame_delete(int index){
+	for(int i=0; i<3; i++){
+		framestore[index + i].value = "none";
+		framestore[index + i].var = "none";
+	}
+}
+
 // Set key value pair at index (unless index == -1, then stored at next free space) in frame store
 int mem_frame_set_value(char *var_in, char *value_in, int index) { 
 	
