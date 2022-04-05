@@ -24,7 +24,6 @@ typedef struct PCB_struct{
 static PCB_t* head = NULL;//pointer to head of ready queue
 static int *framestorepages[frame_size/3]; //holds array of pointers to pagetable locations of pages currently in framestore (index*3 = frame number)
 
-
 int end_process();
 int run_process();
 void load_processes();
@@ -177,7 +176,6 @@ int load_page(PCB_t *current, int page_number){
 // }
 
 void page_fault(PCB_t *process){
-    
     if(load_page(process, process->pagenumber) == -1){      //if frame store is full then evict frame
 
         int index = mem_frame_find_lru();

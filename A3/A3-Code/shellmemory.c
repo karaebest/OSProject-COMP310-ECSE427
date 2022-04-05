@@ -6,7 +6,7 @@
 #define frame_size FSIZE
 #define variable_size VSIZE
 
-int counter = 0; // counter for LRU policy
+static int counter = 0; // counter for LRU policy
 
 struct memory_struct{
 	char *var;
@@ -35,11 +35,11 @@ void mem_init(){
 	mem_reset_variable();
 }
 
-void mem_frame_set_lru(struct memory_struct frame) {
+void mem_frame_set_lru(int i) {
 	int length = snprintf(NULL, 0, "%d", counter);
 	char* str = malloc( length + 1 );
 	snprintf(str, length + 1, "%d", counter);
-	frame.var = strdup(str);
+	framestore[i].var = strdup(str);
 	free(str);
 	counter++;
 }
@@ -55,7 +55,7 @@ int mem_frame_load_next(FILE *p, int o, int n) {
 		// if hole found
 		if (strcmp(framestore[i].value, "none") == 0) {
 			char line[100];
-			mem_frame_set_lru(framestore[i]);
+			mem_frame_set_lru(i);
 			// load n lines
 			for (int j = 0; j < n; j++) {						
 				fgets(line,99,p);
@@ -92,7 +92,7 @@ void mem_frame_delete(int index){
 }
 
 char* mem_frame_get_line(int index){
-	mem_frame_set_lru(framestore[index]);
+	mem_frame_set_lru(index);
 	return strdup(framestore[index].value);
 }
 
@@ -174,7 +174,7 @@ int mem_variable_set_value(char *var_in, char *value_in, int index) {
 char *mem_frame_get_value(char *var_in, int index_in) { //if var_in = NULL, return value at index_in
 
 	if(var_in == NULL){
-		mem_frame_set_lru(framestore[index_in]);
+		mem_frame_set_lru(index_in);
 		return strdup(framestore[index_in].value); 
 	}
 	for (int i=0; i<frame_size; i++){
