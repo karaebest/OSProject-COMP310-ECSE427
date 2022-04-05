@@ -3,4 +3,4 @@
 Kara Best - 260894988
 Victor Zhong - 260865384
 
-Starter code used.
+Our A2 code used.
