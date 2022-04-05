@@ -5,6 +5,8 @@
 #include "shellmemory.h"
 #include "shell.h"
 
+#define frame_size FSIZE
+
 typedef struct PCB_struct{
     char* script;
     int pid;
@@ -13,14 +15,11 @@ typedef struct PCB_struct{
     int length; //num lines of script
     int estimate; //estimate length for aging
     int pagenumber; // current page number to indentify in pagetable
-    int pagetable[10]; // pagetable holding framstore index of each page
-    // TODO: change page table size. Assume each script will have no more than 30 lines for now
+    int pagetable[34]; // pagetable holding framstore index of each page, assumes script will be no longer than 100 lines (as stated on ed)
     struct PCB_struct* next; //pointer to next PCB
      
 } PCB_t;
 
-//TO DO --> change variables in h files
-//TO DO --> add error messages
 
 static PCB_t* head = NULL;//pointer to head of ready queue
 
@@ -30,11 +29,13 @@ void load_processes();
 void end_all_process();
 void promote_process(int, int);
 void age_all_process();
+int load_page(PCB_t *current, int page_number);
+void page_fault(PCB_t *process);
 
 int scheduler(char* name, int len, int multi, char* policy){ //begin process (append to end of ready queue), return pid
     //for multi FCFS: add bool multi as arg, if 1 return w/o running after adding to queue, if 0 run processes after adding
     int pid_counter = 1; //to make sure new processes have unique pid
-
+    int i;
     if(head == NULL){
         head = (PCB_t *)malloc(sizeof(PCB_t));
         head->script = name;
@@ -45,6 +46,11 @@ int scheduler(char* name, int len, int multi, char* policy){ //begin process (ap
         head->estimate = len;
         head->pagenumber = 0;
         head->next = NULL;
+        for(i=0; i<34; i++){                //initialize all spots in pagetable to -1
+            head->pagetable[i] = -1;
+        }
+        load_page(head, 0);       //load first 2 pages 
+        if(head->length>3) load_page(head, 1);
     }else{
         PCB_t *current = head;
     
@@ -63,80 +69,98 @@ int scheduler(char* name, int len, int multi, char* policy){ //begin process (ap
         current->next->estimate = len;
         current->next->pagenumber = 0;
         current->next->next = NULL;
+        for(i=0; i<34; i++){           
+            current->next->pagetable[i] = -1;
+        }
+        load_page(current->next, 0);   //load first 2 pages
+        if(current->next->length > 3) load_page(current->next, 1);
+        
     }
+    
     if(multi==1) return 0;
-    load_processes();
+    //load_processes();
     return run_process(policy);
 }
-
-// load program pages alternatively into the frame store. each page is 3 lines
-void load_processes() {
-    PCB_t *current = head;
-    int max = 0;
-    // find script with the most lines, and loop for number of lines / 3
-    while (current != NULL) {
-        int n = (current->length + 2) / 3; // round up
-        if (n > max) {
-            max = n;
-        }
-        current = current->next;
+ 
+int load_page(PCB_t *current, int page_number){ 
+      
+    int lines = 3;
+    if (current->length - (page_number*3) < 3) {
+        lines = current->length - (page_number*3);
     }
-    // loop max times to go through all lines of all scripts
-    for (int i = 0; i < max; i++) {
-        current = head; // go back to head for next pages
-        
-        // for each script, load the next 3 lines into memory at the next free hole
-        while (current != NULL ) {
-            int loads = 3;
-            // if script is finished, go to next
-            if (current->length == current->counter) {
-                current = current->next;
-                continue;
-            }
-            // if less than 3 lines left, only loop for what's left
-            else if (current->length - current->counter < 3) {
-                loads = current->length - current->counter;
-            }
-            char* name_script = malloc(sizeof(current->script));
-            name_script = strncpy(name_script, current->script, sizeof(current->script));
-            char path[50];
-            sprintf(path, "backing_store/%s", name_script);
+    char* name_script = malloc(sizeof(current->script));
+    name_script = strncpy(name_script, current->script, sizeof(current->script));
+    char path[100];
+    sprintf(path, "backing_store/%s", name_script);
 
-            FILE *p = fopen(path,"rt");
-            if(p == NULL){ // file cannot be opened
-                end_all_process();
-                exit(99);
-            }
-
-            // load page at next free hole in memory.
-            int index = mem_frame_load_next(p, current->counter, loads);
-            if (index == -1) { // no more free memory
-                end_all_process();
-                exit(99);
-            }
-            current->pagetable[i] = index; // here, index is the framestore index where the page is saved
-
-            fclose(p);
-            free(name_script);
-            current->counter += loads;
-            current = current->next;
-        }
+    FILE *p = fopen(path,"rt");
+    if(p == NULL){ // file cannot be opened      MIGHT NEED TO CHANGE THIS
+        end_all_process();
+        exit(99);
     }
-    // reset counters to 0
-    current = head;
-    while (current != NULL) {
-        current->counter = 0;
-        current = current->next;
+
+    // load page at next free hole in memory.
+    int index = mem_frame_load_next(p, (page_number*3), lines);
+    if (index == -1) {              // no more free memory
+        fclose(p);
+        free(name_script);
+        return index;
     }
+    current->pagetable[page_number] = index; // here, index is the framestore index where the page is saved
+    fclose(p);
+    free(name_script);
+    return 0;
 }
 
+
+void page_fault(PCB_t *process){
+    if(load_page(process, process->pagenumber) == -1){      //if frame store is full then evict frame
+
+        int index = mem_frame_find_lru();
+        char* evict = "Page fault! Victim page contents:\n";
+        char buffer[400]; // each line is no longer than 100 characters
+        strcpy(buffer, evict);
+        for(int i=0; i<3; i++){
+            if(strcmp(mem_frame_get_line(index+i), "none")!=0){
+                strcat(buffer, mem_frame_get_line(index+i));
+            }
+        }
+        strcat(buffer, "End of victim page contents.");
+        printf("%s\n", buffer);
+        mem_frame_delete(index);            //delete frame from store
+        load_page(process, process->pagenumber);
+    }
+    
+}
 
 int run_process(char* policy){
     int errCode;
+    int fault = 0;
     PCB_t *current = head;
+    PCB_t *back = NULL;
+    PCB_t *currentTemp = NULL;
+    int k;
     if (strcmp(policy, "FCFS") == 0) { // first come first serve policy
         while ((head != NULL)) {
             while((head->counter)!=(head->length)){ // run all instructions of script
+                if(head->pagetable[head->pagenumber] == -1){
+                    page_fault(head);
+                    current = head;
+                    fault = 1;
+                    if(head->next == NULL) break;            //if already at the end of the ready queue no rearranging needed
+                    else{                    //if at head of queue
+                        currentTemp = head;                   
+                        currentTemp = currentTemp->next;
+                        current->next = NULL;               
+                        head = currentTemp;
+                        while(currentTemp->next != NULL){       //send to back and move to next process
+                            currentTemp = currentTemp->next;
+                        }
+                        currentTemp->next = current;
+                        break;
+                    }
+                    
+                }
                 int index = head->pagetable[head->pagenumber] + head->counter % 3; // index is index pointed to by page table + offset from the counter
                 errCode = parseInput(mem_frame_get_value(NULL, index));
                 if (errCode != 0) { // exit upon error
@@ -148,7 +172,8 @@ int run_process(char* policy){
                     head->pagenumber++;
                 }
             }
-            end_process(head->pid); // end process when done
+            if(fault==0) end_process(head->pid); // end process when done
+            fault = 0;
         }
     }
     else if (strcmp(policy, "RR") == 0) { // round robin policy
@@ -165,6 +190,39 @@ int run_process(char* policy){
                 diff = 2;
             }
             for (int i=0; i < diff; i++) {
+                if(current->pagetable[current->pagenumber] == -1){   //page fault
+                    page_fault(current);
+                    fault = 1;
+                    if(current->next == NULL) break;            //if already at the end of the ready queue no rearranging needed
+                    if(current == head){  
+                        currentTemp = head;                   
+                        currentTemp = currentTemp->next;
+                        current->next = NULL;               
+                        head = currentTemp;
+                        while(currentTemp->next != NULL){       //send to back and move to next process
+                            currentTemp = currentTemp->next;
+                        }
+                        currentTemp->next = current;
+                        current = head;                   // go back to head node
+                        break;
+                    }
+                    else{                                       //if in middle of queue
+                        currentTemp = head;
+                        while(currentTemp->next != current){    //point node before current to one after current
+                            currentTemp = currentTemp->next;
+                        }
+                        currentTemp->next = current->next;
+                        back = currentTemp;
+                        current->next = NULL;
+                        while(back->next != NULL){              //send current to back and move to next process
+                            back = back->next;
+                        }    
+                        back->next = current;
+                        current = currentTemp;
+                        break;
+                    }
+                    
+                }
                 int index = current->pagetable[current->pagenumber] + current->counter % 3; // index is index pointed to by page table + offset from the counter
                 errCode = parseInput(mem_frame_get_value(NULL, index));
                 if (errCode != 0) { // exit upon error
@@ -176,8 +234,11 @@ int run_process(char* policy){
                     current->pagenumber++;
                 }
             }
-            if (current->next == NULL) current = head; // if at end of linked list, go back to head
-            else current = current->next; // go to next node
+            if(fault==0){
+                if (current->next == NULL) current = head; // if at end of linked list, go back to head
+                else current = current->next; // go to next node
+            }
+            fault = 0;
         }
     }
     else if (strcmp(policy, "SJF") == 0) { // shortest job first policy
@@ -193,6 +254,37 @@ int run_process(char* policy){
                 current = current->next;
             }
             while ((minjob->counter) != (minjob->length)){ // run all instructions of script
+                if(minjob->pagetable[minjob->pagenumber] == -1){
+                    page_fault(minjob);
+                    fault = 1;
+                    if(minjob->next == NULL) break;            //if already at the end of the ready queue no rearranging needed
+                    if(minjob == head){  
+                        currentTemp = head;                   
+                        currentTemp = currentTemp->next;
+                        minjob->next = NULL;               
+                        head = currentTemp;
+                        while(currentTemp->next != NULL){       //send to back and move to next process
+                            currentTemp = currentTemp->next;
+                        }
+                        currentTemp->next = minjob;
+                        minjob = head->next;                  // go to next node
+                        break;
+                    }
+                    else{                                       //if in middle of queue
+                        currentTemp = head;
+                        while(currentTemp->next != minjob){    //point node before current to one after current
+                            currentTemp = currentTemp->next;
+                        }
+                        currentTemp->next = minjob->next;
+                        back = currentTemp;
+                        minjob->next = NULL;
+                        while(back->next != NULL){              //send current to back and move to next process
+                            back = back->next;
+                        }    
+                        back->next = minjob;
+                        break;
+                    }
+                }
                 int index = minjob->pagetable[minjob->pagenumber] + minjob->counter % 3; // index is index pointed to by page table + offset from the counter
                 errCode = parseInput(mem_frame_get_value(NULL, index));
                 if (errCode != 0) { // exit upon error
@@ -204,10 +296,11 @@ int run_process(char* policy){
                     minjob->pagenumber++;
                 }
             }
-            end_process(minjob->pid); // end process when done
+            if(fault==0) end_process(minjob->pid); // end process when done
+            fault = 0;
         }
     }
-    else if (strcmp(policy, "AGING") == 0) {
+    else if (strcmp(policy, "AGING") == 0) {        //TO DO: add page fault to aging
         int flag = 0; // flag to know if need to move head node to tail
         while (head != NULL) {
             int minestimate = -1;
@@ -227,6 +320,9 @@ int run_process(char* policy){
             int diff = (head->length) - (head->counter);
             if (diff > 0){ // run 1 instruction
                 flag++;
+                if(head->pagetable[head->pagenumber] == -1){
+                    //trigger page fault
+                }
                 int index = head->pagetable[head->pagenumber] + head->counter % 3; // index is index pointed to by page table + offset from the counter
                 errCode = parseInput(mem_frame_get_value(NULL, index));
                 if (errCode != 0) { // exit upon error

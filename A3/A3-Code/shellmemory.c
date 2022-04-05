@@ -3,8 +3,10 @@
 #include<stdio.h>
 
 // frame_size needs to be a multiple of 3
-#define frame_size 900
-#define variable_size 100
+#define frame_size FSIZE
+#define variable_size VSIZE
+
+static int counter = 0; // counter for LRU policy
 
 struct memory_struct{
 	char *var;
@@ -18,7 +20,7 @@ struct memory_struct variablestore[variable_size];
 
 void mem_reset_variable() {
 	int i;
-	for (i=0; i<100; i++) {		
+	for (i=0; i<variable_size; i++) {		
 		variablestore[i].var = "none";
 		variablestore[i].value = "none";
 	}
@@ -26,11 +28,20 @@ void mem_reset_variable() {
 
 void mem_init(){
 	int i;
-	for (i=0; i<900; i++) {		
+	for (i=0; i<frame_size; i++) {		
 		framestore[i].var = "none";
 		framestore[i].value = "none";
 	}
 	mem_reset_variable();
+}
+
+void mem_frame_set_lru(int i) {
+	int length = snprintf(NULL, 0, "%d", counter);
+	char* str = malloc( length + 1 );
+	snprintf(str, length + 1, "%d", counter);
+	framestore[i].var = strdup(str);
+	free(str);
+	counter++;
 }
 
 // finds the next hole available in memory and loads n lines from file p with offset of o lines
@@ -44,16 +55,44 @@ int mem_frame_load_next(FILE *p, int o, int n) {
 		// if hole found
 		if (strcmp(framestore[i].value, "none") == 0) {
 			char line[100];
+			mem_frame_set_lru(i);
 			// load n lines
-			for (int j = 0; j < n; j++) {
+			for (int j = 0; j < n; j++) {						
 				fgets(line,99,p);
 				framestore[i + j].value = strdup(line);
 				memset(line, 0, sizeof(line));
 			}
+
 			return i;
 		}
 	}
 	return -1; //if not set (shell mem full)
+}
+
+// finds index of least recently used frame
+int mem_frame_find_lru() {
+	int index, min = -1;
+	for (int i=0; i < frame_size; i+=3) {
+		int count = atoi(framestore[i].var);
+		if (count < min || min == -1) {
+			min = count;
+			index = i;
+		}
+	}
+	return index;
+}
+
+//deletes frame starting at specified index (index will always be multiple of 3 within frame store size)
+void mem_frame_delete(int index){
+	for(int i=0; i<3; i++){
+		framestore[index + i].value = "none";
+		framestore[index + i].var = "none";
+	}
+}
+
+char* mem_frame_get_line(int index){
+	mem_frame_set_lru(index);
+	return strdup(framestore[index].value);
 }
 
 // Set key value pair at index (unless index == -1, then stored at next free space) in frame store
@@ -134,7 +173,8 @@ int mem_variable_set_value(char *var_in, char *value_in, int index) {
 char *mem_frame_get_value(char *var_in, int index_in) { //if var_in = NULL, return value at index_in
 
 	if(var_in == NULL){
-		return strdup(framestore[index_in].value); //add error message here if index_in is outOfBounds
+		mem_frame_set_lru(index_in);
+		return strdup(framestore[index_in].value); 
 	}
 	for (int i=0; i<frame_size; i++){
 		if(i+index_in>frame_size){return "Index out of bounds";} 
@@ -149,7 +189,7 @@ char *mem_frame_get_value(char *var_in, int index_in) { //if var_in = NULL, retu
 char *mem_variable_get_value(char *var_in, int index_in) { //if var_in = NULL, return value at index_in
 
 	if(var_in == NULL){
-		return strdup(variablestore[index_in].value); //add error message here if index_in is outOfBounds
+		return strdup(variablestore[index_in].value); 
 	}
 	for (int i=0; i<variable_size; i++){
 		if(i+index_in>variable_size){return "Index out of bounds";} 
