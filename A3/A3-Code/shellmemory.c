@@ -6,6 +6,8 @@
 #define frame_size FSIZE
 #define variable_size VSIZE
 
+int counter = 0; // counter for LRU policy
+
 struct memory_struct{
 	char *var;
 	char *value;
@@ -33,6 +35,15 @@ void mem_init(){
 	mem_reset_variable();
 }
 
+void mem_frame_set_lru(struct memory_struct frame) {
+	int length = snprintf(NULL, 0, "%d", counter);
+	char* str = malloc( length + 1 );
+	snprintf(str, length + 1, "%d", counter);
+	frame.var = strdup(str);
+	free(str);
+	counter++;
+}
+
 // finds the next hole available in memory and loads n lines from file p with offset of o lines
 int mem_frame_load_next(FILE *p, int o, int n) {
 	// go through offset of o lines
@@ -44,11 +55,12 @@ int mem_frame_load_next(FILE *p, int o, int n) {
 		// if hole found
 		if (strcmp(framestore[i].value, "none") == 0) {
 			char line[100];
+			mem_frame_set_lru(framestore[i]);
 			// load n lines
 			for (int j = 0; j < n; j++) {						
 				fgets(line,99,p);
 				framestore[i + j].value = strdup(line);
-				printf("%d\n %s\n", i+j, framestore[i + j].value);
+				// printf("%d\n %s\n", i+j, framestore[i + j].value);
 				memset(line, 0, sizeof(line));
 			}
 
@@ -56,6 +68,19 @@ int mem_frame_load_next(FILE *p, int o, int n) {
 		}
 	}
 	return -1; //if not set (shell mem full)
+}
+
+// finds index of least recently used frame
+int mem_frame_find_lru() {
+	int index, min = -1;
+	for (int i=0; i < frame_size; i+=3) {
+		int count = atoi(framestore[i].var);
+		if (count < min || min == -1) {
+			min = count;
+			index = i;
+		}
+	}
+	return index;
 }
 
 //deletes frame starting at specified index (index will always be multiple of 3 within frame store size)
@@ -67,6 +92,7 @@ void mem_frame_delete(int index){
 }
 
 char* mem_frame_get_line(int index){
+	mem_frame_set_lru(framestore[index]);
 	return strdup(framestore[index].value);
 }
 
@@ -148,6 +174,7 @@ int mem_variable_set_value(char *var_in, char *value_in, int index) {
 char *mem_frame_get_value(char *var_in, int index_in) { //if var_in = NULL, return value at index_in
 
 	if(var_in == NULL){
+		mem_frame_set_lru(framestore[index_in]);
 		return strdup(framestore[index_in].value); 
 	}
 	for (int i=0; i<frame_size; i++){

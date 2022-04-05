@@ -1,6 +1,7 @@
 void mem_reset_variable();
 void mem_init();
 int mem_frame_load_next(FILE *p, int o, int n);
+int mem_frame_find_lru();
 char *mem_frame_get_value(char *var, int ind);
 char *mem_variable_get_value(char *var, int ind);
 int mem_frame_set_value(char *var, char *value, int ind);

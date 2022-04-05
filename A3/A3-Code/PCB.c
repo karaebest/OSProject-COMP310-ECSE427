@@ -178,18 +178,17 @@ int load_page(PCB_t *current, int page_number){
 
 void page_fault(PCB_t *process){
     
-    int index;
-
     if(load_page(process, process->pagenumber) == -1){      //if frame store is full then evict frame
 
+        int index = mem_frame_find_lru();
         //TO ADD HERE: finding           
-        char* evict = "Page fault! Victim page contents:\n";
-        char buffer[1000];
+        char* evict = "\nPage fault! Victim page contents:\n";
+        char buffer[400]; // each line is no longer than 100 characters
         strcpy(buffer, evict);
         for(int i=0; i<3; i++){
             if(strcmp(mem_frame_get_line(index+i), "none")!=0){
                 strcat(buffer, mem_frame_get_line(index+i));
-                strcat(buffer, "\n");       // might need to add extra \ before newline
+                // strcat(buffer, "\n");       // might need to add extra \ before newline
             }
         }
         strcat(buffer, "End of victim page contents.\n");
@@ -273,7 +272,7 @@ int run_process(char* policy){
                             currentTemp = currentTemp->next;
                         }
                         currentTemp->next = current;
-                        current = head->next;                   // go to next node
+                        current = head;                   // go back to head node
                         break;
                     }
                     else{                                       //if in middle of queue
@@ -288,7 +287,7 @@ int run_process(char* policy){
                             back = back->next;
                         }    
                         back->next = current;
-                        current = currentTemp->next;
+                        current = currentTemp;
                         break;
                     }
                     
