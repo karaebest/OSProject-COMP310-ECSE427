@@ -24,6 +24,8 @@ typedef struct PCB_struct{
 
 static PCB_t* head = NULL;//pointer to head of ready queue
 
+static int counter = 0;
+
 int end_process();
 int run_process();
 void load_processes();
@@ -69,21 +71,41 @@ int scheduler(char* name, int len, int multi, char* policy){ //begin process (ap
     return run_process(policy);
 }
 
-// load program pages alternatively into the frame store. each page is 3 lines
-void load_processes() {
-    PCB_t *current = head;
-    int max = 0;
-    // find script with the most lines, and loop for number of lines / 3
-    while (current != NULL) {
-        int n = (current->length + 2) / 3; // round up
-        if (n > max) {
-            max = n;
-        }
-        current = current->next;
+    FILE *p = fopen(path,"rt");
+    if(p == NULL){ // file cannot be opened      MIGHT NEED TO CHANGE THIS
+        end_all_process();
+        exit(99);
     }
-    // loop max times to go through all lines of all scripts
-    for (int i = 0; i < max; i++) {
-        current = head; // go back to head for next pages
+
+    // load page at next free hole in memory.
+    int index = mem_frame_load_next(p, (page_number*3), lines, counter);
+    counter++;
+    if (index == -1) {              // no more free memory
+        fclose(p);
+        free(name_script);
+        return index;
+    }
+    current->pagetable[page_number] = index; // here, index is the framestore index where the page is saved
+    fclose(p);
+    free(name_script);
+    return 0;
+}
+
+// load program pages alternatingly into the frame store. each page is 3 lines
+// void load_processes() {
+//     PCB_t *current = head;
+//     int max = 0;
+//     // find script with the most lines, and loop for number of lines / 3
+//     while (current != NULL) {
+//         int n = (current->length + 2) / 3; // round up
+//         if (n > max) {
+//             max = n;
+//         }
+//         current = current->next;
+//     }
+//     // loop max times to go through all pages of all scripts
+//     for (int i = 0; i < max; i++) {
+//         current = head; // go back to head for next pages
         
         // for each script, load the next 3 lines into memory at the next free hole
         while (current != NULL ) {
@@ -108,11 +130,15 @@ void load_processes() {
                 exit(99);
             }
 
-            // load page at next free hole in memory.
-            int index = mem_frame_load_next(p, current->counter, loads);
-            if (index == -1) { // no more free memory
-                end_all_process();
-                exit(99);
+        int index = mem_frame_find_lru();
+        //TO ADD HERE: finding
+        char* evict = "\nPage fault! Victim page contents:\n";
+        char buffer[400]; // each line is no longer than 100 characters
+        strcpy(buffer, evict);
+        for(int i=0; i<3; i++){
+            if(strcmp(mem_frame_get_line(index+i), "none")!=0){
+                strcat(buffer, mem_frame_get_line(index+i));
+                // strcat(buffer, "\n");       // might need to add extra \ before newline
             }
             current->pagetable[i] = index; // here, index is the framestore index where the page is saved
 
@@ -120,6 +146,13 @@ void load_processes() {
             free(name_script);
             current->counter += loads;
             current = current->next;
+        }
+        strcat(buffer, "End of victim page contents.\n");
+        printf("%s\n", buffer);
+        mem_frame_delete(index);            //delete frame from store
+        int res = load_page(process, process->pagenumber);
+        if (res == -1) {
+            printf("ERROR big prob");
         }
     }
     // reset counters to 0
@@ -138,7 +171,8 @@ int run_process(char* policy){
         while ((head != NULL)) {
             while((head->counter)!=(head->length)){ // run all instructions of script
                 int index = head->pagetable[head->pagenumber] + head->counter % 3; // index is index pointed to by page table + offset from the counter
-                errCode = parseInput(mem_frame_get_value(NULL, index));
+                errCode = parseInput(mem_frame_get_value(NULL, index, counter));
+                counter++;
                 if (errCode != 0) { // exit upon error
                     end_all_process();
                     return errCode;
@@ -166,7 +200,8 @@ int run_process(char* policy){
             }
             for (int i=0; i < diff; i++) {
                 int index = current->pagetable[current->pagenumber] + current->counter % 3; // index is index pointed to by page table + offset from the counter
-                errCode = parseInput(mem_frame_get_value(NULL, index));
+                errCode = parseInput(mem_frame_get_value(NULL, index, counter));
+                counter++;
                 if (errCode != 0) { // exit upon error
                     end_all_process();
                     return errCode;
@@ -194,7 +229,8 @@ int run_process(char* policy){
             }
             while ((minjob->counter) != (minjob->length)){ // run all instructions of script
                 int index = minjob->pagetable[minjob->pagenumber] + minjob->counter % 3; // index is index pointed to by page table + offset from the counter
-                errCode = parseInput(mem_frame_get_value(NULL, index));
+                errCode = parseInput(mem_frame_get_value(NULL, index, counter));
+                counter++;
                 if (errCode != 0) { // exit upon error
                     end_all_process();
                     return errCode;
@@ -228,7 +264,8 @@ int run_process(char* policy){
             if (diff > 0){ // run 1 instruction
                 flag++;
                 int index = head->pagetable[head->pagenumber] + head->counter % 3; // index is index pointed to by page table + offset from the counter
-                errCode = parseInput(mem_frame_get_value(NULL, index));
+                errCode = parseInput(mem_frame_get_value(NULL, index, counter));
+                counter++;
                 if (errCode != 0) { // exit upon error
                     end_all_process();
                     return errCode;
